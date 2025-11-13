@@ -243,9 +243,11 @@ packages:
   zentoast:
     dependency: "direct main"
     description:
-      path: ".."
-      relative: true
-    source: path
+      path: "."
+      ref: main
+      resolved-ref: "5a80a1081491f52c226cb631c612031e8c673f84"
+      url: "https://github.com/definev/zentoast.git"
+    source: git
     version: "0.0.1"
 sdks:
   dart: ">=3.8.1 <4.0.0"

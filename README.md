@@ -5,13 +5,13 @@ You design the UI — **zentoast** takes care of animation, physics, queuing, ge
 
 ## Features
 
-✨ **Headless Architecture** – Bring your own widgets & design
-🎯 **Flexible Positioning** – Display toasts anywhere on screen
-🎨 **Extremely Customizable** – Full control over layout, styling & behavior
-🏃 **Fluid Animations** – Motor-powered, physics-based animation system
-👆 **Rich Gestures** – Drag to dismiss, tap to pause, swipe interactions
-🔧 **Theming Support** – Global settings via `ToastTheme`
-📦 **Multiple Viewers** – Independent stacks with synchronized smoothness
+- ✨ **Headless Architecture** – Bring your own widgets & design
+- 🎯 **Flexible Positioning** – Display toasts anywhere on screen
+- 🎨 **Extremely Customizable** – Full control over layout, styling & behavior
+- 🏃 **Fluid Animations** – Motor-powered, physics-based animation system
+- 👆 **Rich Gestures** – Drag to dismiss, tap to pause, swipe interactions
+- 🔧 **Theming Support** – Global settings via `ToastTheme`
+- 📦 **Multiple Viewers** – Independent stacks with synchronized smoothness
 
 ---
 
