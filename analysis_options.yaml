@@ -1,0 +1,8 @@
+include: package:flutter_lints/flutter.yaml
+analyzer:
+  errors:
+    implicit_call_tearoffs: ignore
+
+lints:
+  rules:
+    implicit_call_tearoffs: false
