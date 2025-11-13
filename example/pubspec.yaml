@@ -38,6 +38,8 @@ dependencies:
     git:
       url: https://github.com/definev/zentoast.git
       ref: main
+    # path: ../
+  oref: ^2.5.1
 
 dev_dependencies:
   flutter_test:

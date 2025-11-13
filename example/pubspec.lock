@@ -156,7 +156,7 @@ packages:
     source: hosted
     version: "1.0.1"
   oref:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: oref
       sha256: c0794a3c067b6e4281728759369f4c4f5bb9f1704672eee64d717eb7290bf52d
@@ -245,7 +245,7 @@ packages:
     description:
       path: "."
       ref: main
-      resolved-ref: "5a80a1081491f52c226cb631c612031e8c673f84"
+      resolved-ref: f73b4092dc5ddb4d5d126abeb9b314926c31a5be
       url: "https://github.com/definev/zentoast.git"
     source: git
     version: "0.0.1"

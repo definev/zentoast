@@ -84,6 +84,7 @@ class ToastProvider extends InheritedWidget {
     required this.data,
     required this.indexToastMap,
     required this.willDeleteToastIndex,
+    required this.onDragToastIndex,
     required super.child,
   });
 
@@ -96,11 +97,13 @@ class ToastProvider extends InheritedWidget {
         final data = signal<List<Toast>>(context, []);
         final indexToastMap = signal<Map<String, int>>(context, {});
         final willDeleteToastIndex = signal<Set<int>>(context, {});
+        final onDragToastIndex = signal<Set<int>>(context, {});
 
         return ToastProvider._(
           data: data,
           indexToastMap: indexToastMap,
           willDeleteToastIndex: willDeleteToastIndex,
+          onDragToastIndex: onDragToastIndex,
           child: child,
         );
       },
@@ -110,6 +113,7 @@ class ToastProvider extends InheritedWidget {
   final WritableSignal<List<Toast>> data;
   final WritableSignal<Map<String, int>> indexToastMap;
   final WritableSignal<Set<int>> willDeleteToastIndex;
+  final WritableSignal<Set<int>> onDragToastIndex;
 
   void show(Toast toast) {
     data([...data(), toast]);
@@ -146,8 +150,7 @@ class ToastViewer extends StatefulWidget {
 
 class _ToastViewerState extends State<ToastViewer> {
   final isHovered = signal(null, false);
-  final forceHover = signal(null, false);
-  final hasItemDragged = signal(null, false);
+  final paused = signal(null, false);
 
   Effect? _wipeToastEffect;
   Effect? _periodicDeleteToastEffect;
@@ -157,8 +160,9 @@ class _ToastViewerState extends State<ToastViewer> {
   Timer? _periodicDeleteToastTimer;
   void _setHoverDebounced(bool value, {Duration? delay}) {
     _hoverDebounceTimer?.cancel();
+    if (untrack(paused)) return;
     _hoverDebounceTimer = Timer(delay ?? const Duration(milliseconds: 200), () {
-      if (!untrack(forceHover)) isHovered(value);
+      if (!untrack(paused)) isHovered(value);
     });
   }
 
@@ -197,7 +201,7 @@ class _ToastViewerState extends State<ToastViewer> {
             child: Opacity(
               opacity: opacity.clamp(0, 1),
               child: MouseRegion(
-                onEnter: (event) => isHovered(true),
+                onEnter: (event) => _setHoverDebounced(true),
                 onExit: (event) => _setHoverDebounced(false),
                 child: Builder(
                   builder: (context) {
@@ -215,22 +219,34 @@ class _ToastViewerState extends State<ToastViewer> {
                           child: GestureDetector(
                             onTap: () {
                               if (isHovered() == false) {
-                                forceHover(!forceHover());
+                                paused(!paused());
                               }
                             },
                             onVerticalDragStart: (details) {
                               manualDragPosition(0.0);
                               globalPosition(details.globalPosition);
                               onDrag(true);
+                              toastProvider.onDragToastIndex({
+                                ...toastProvider.onDragToastIndex(),
+                                index,
+                              });
                             },
                             onVerticalDragCancel: () {
                               manualDragPosition(0.0);
                               globalPosition(Offset.zero);
                               onDrag(false);
+                              toastProvider.onDragToastIndex(
+                                {...toastProvider.onDragToastIndex()}
+                                  ..remove(index),
+                              );
                             },
                             onVerticalDragEnd: (details) {
                               globalPosition(Offset.zero);
                               onDrag(false);
+                              toastProvider.onDragToastIndex(
+                                {...toastProvider.onDragToastIndex()}
+                                  ..remove(index),
+                              );
 
                               if (details.primaryVelocity case final v?) {
                                 if ((widget.alignment.y > 0 && v > 50) ||
@@ -294,6 +310,12 @@ class _ToastViewerState extends State<ToastViewer> {
   Widget build(BuildContext context) {
     final toastProvider = ToastProvider.of(context);
 
+    watch(context, () {
+      print(
+        'isHovered: ${isHovered()} | forceHover: ${this.paused()} | hasItemDragged: ${toastProvider.onDragToastIndex().isNotEmpty}',
+      );
+    });
+
     _wipeToastEffect ??= effect(context, () {
       onEffectCleanup(() => _cleanUpDeleteTimer?.cancel());
       onEffectDispose(() => _cleanUpDeleteTimer?.cancel());
@@ -319,8 +341,8 @@ class _ToastViewerState extends State<ToastViewer> {
       /// Retrigger effect when willDeleteToastIndex changes
       final _ = toastProvider.willDeleteToastIndex();
       final _ = toastProvider.data();
-      final dragged = hasItemDragged();
-      final paused = forceHover();
+      final dragged = toastProvider.onDragToastIndex().isNotEmpty;
+      final paused = this.paused();
       if (dragged || paused) return;
 
       _periodicDeleteToastTimer = Timer(widget.delay, () {
@@ -396,7 +418,7 @@ class _ToastViewerState extends State<ToastViewer> {
                           .willDeleteToastIndex()
                           .contains(index);
                       final isFirstAppear = indexToast() == -1;
-                      final hovered = isHovered() || forceHover();
+                      final hovered = isHovered() || this.paused();
                       final gap = toastTheme.gap;
 
                       double calculateHeight() {
