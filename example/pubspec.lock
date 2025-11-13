@@ -245,7 +245,7 @@ packages:
     description:
       path: "."
       ref: main
-      resolved-ref: f73b4092dc5ddb4d5d126abeb9b314926c31a5be
+      resolved-ref: "7dd28bee22a83655e3909a13038871d44f39ee87"
       url: "https://github.com/definev/zentoast.git"
     source: git
     version: "0.0.1"
