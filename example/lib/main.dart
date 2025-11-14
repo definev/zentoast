@@ -328,196 +328,191 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Toaster')),
+      appBar: AppBar(title: const Text('Zentoast')),
       body: Center(
-        child: Column(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
-          spacing: 12,
           children: [
-            SignalBuilder(
-              builder:
-                  (context) => SegmentedButton(
-                    segments: [
-                      ButtonSegment(
-                        value: Alignment.topLeft,
-                        label: Text('Top Left'),
-                      ),
-                      ButtonSegment(
-                        value: Alignment.topRight,
-                        label: Text('Top Right'),
-                      ),
-                      ButtonSegment(
-                        value: Alignment.bottomLeft,
-                        label: Text('Bottom Left'),
-                      ),
-                      ButtonSegment(
-                        value: Alignment.bottomRight,
-                        label: Text('Bottom Right'),
-                      ),
-                    ],
-                    selected: {toastAlignment()},
-                    onSelectionChanged:
-                        (value) => toastAlignment(
-                          value.firstOrNull ?? toastAlignment(),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              spacing: 12,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children:
+                  [Text('Sonner'), Text('Brutalist'), Text('Card')]
+                      .map(
+                        (child) => SizedBox(
+                          height: 32,
+                          width: 80,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: child,
+                          ),
                         ),
-                  ),
+                      )
+                      .toList(),
             ),
-            Row(
+            Column(
               mainAxisSize: MainAxisSize.min,
               spacing: 12,
               children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Toast(
-                      builder:
-                          (toast) => SonnerToast(
-                            variant: ToastVariant.success,
-                            title: 'Success',
-                            message: 'Your changes have been saved.',
-                            height: toast.height,
-                            onClose: () => toast.hide(context),
-                          ),
-                    ).show(context);
-                  },
-                  child: const Text('Show Success'),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 12,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        Toast(
+                          builder:
+                              (toast) => SonnerToast(
+                                variant: ToastVariant.success,
+                                title: 'Success',
+                                message: 'Your changes have been saved.',
+                                height: toast.height,
+                                onClose: () => toast.hide(context),
+                              ),
+                        ).show(context);
+                      },
+                      child: const Text('Success'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Toast(
+                          builder:
+                              (toast) => SonnerToast(
+                                variant: ToastVariant.info,
+                                title: 'Information',
+                                message: 'Heads up! Something to be aware of.',
+                                height: toast.height,
+                                onClose: () => toast.hide(context),
+                              ),
+                        ).show(context);
+                      },
+                      child: const Text('Information'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Toast(
+                          builder:
+                              (toast) => SonnerToast(
+                                variant: ToastVariant.warning,
+                                title: 'Warning',
+                                message: 'Please double-check your input.',
+                                height: toast.height,
+                                onClose: () => toast.hide(context),
+                              ),
+                        ).show(context);
+                      },
+                      child: const Text('Warning'),
+                    ),
+                  ],
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    Toast(
-                      builder:
-                          (toast) => SonnerToast(
-                            variant: ToastVariant.info,
-                            title: 'Information',
-                            message: 'Heads up! Something to be aware of.',
-                            height: toast.height,
-                            onClose: () => toast.hide(context),
-                          ),
-                    ).show(context);
-                  },
-                  child: const Text('Show Information'),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 12,
+                  children: [
+                    FilledButton(
+                      onPressed: () {
+                        Toast(
+                          builder:
+                              (toast) => BrutalistToast(
+                                variant: ToastVariant.success,
+                                title: 'Success',
+                                message: 'Loud and proud. Changes saved.',
+                                height: toast.height,
+                                onClose: () => toast.hide(context),
+                              ),
+                        ).show(context);
+                      },
+                      child: const Text('Success'),
+                    ),
+                    FilledButton(
+                      onPressed: () {
+                        Toast(
+                          builder:
+                              (toast) => BrutalistToast(
+                                variant: ToastVariant.info,
+                                title: 'Information',
+                                message: 'FYI — keep an eye on this.',
+                                height: toast.height,
+                                onClose: () => toast.hide(context),
+                              ),
+                        ).show(context);
+                      },
+                      child: const Text('Information'),
+                    ),
+                    FilledButton(
+                      onPressed: () {
+                        Toast(
+                          builder:
+                              (toast) => BrutalistToast(
+                                variant: ToastVariant.warning,
+                                title: 'Warning',
+                                message: 'Stop. Recheck your inputs!',
+                                height: toast.height,
+                                onClose: () => toast.hide(context),
+                              ),
+                        ).show(context);
+                      },
+                      child: const Text('Warning'),
+                    ),
+                  ],
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    Toast(
-                      builder:
-                          (toast) => SonnerToast(
-                            variant: ToastVariant.warning,
-                            title: 'Warning',
-                            message: 'Please double-check your input.',
-                            height: toast.height,
-                            onClose: () => toast.hide(context),
-                          ),
-                    ).show(context);
-                  },
-                  child: const Text('Show Warning'),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: 12,
-              children: [
-                FilledButton(
-                  onPressed: () {
-                    Toast(
-                      builder:
-                          (toast) => BrutalistToast(
-                            variant: ToastVariant.success,
-                            title: 'Success',
-                            message: 'Loud and proud. Changes saved.',
-                            height: toast.height,
-                            onClose: () => toast.hide(context),
-                          ),
-                    ).show(context);
-                  },
-                  child: const Text('Brutalist Success'),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    Toast(
-                      builder:
-                          (toast) => BrutalistToast(
-                            variant: ToastVariant.info,
-                            title: 'Information',
-                            message: 'FYI — keep an eye on this.',
-                            height: toast.height,
-                            onClose: () => toast.hide(context),
-                          ),
-                    ).show(context);
-                  },
-                  child: const Text('Brutalist Information'),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    Toast(
-                      builder:
-                          (toast) => BrutalistToast(
-                            variant: ToastVariant.warning,
-                            title: 'Warning',
-                            message: 'Stop. Recheck your inputs!',
-                            height: toast.height,
-                            onClose: () => toast.hide(context),
-                          ),
-                    ).show(context);
-                  },
-                  child: const Text('Brutalist Warning'),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: 12,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Toast(
-                      height: 300,
-                      builder:
-                          (toast) => CardToast(
-                            variant: ToastVariant.success,
-                            title: 'Card Success',
-                            message:
-                                'This is a card-style toast with an image and custom text. It has a larger height for more content.',
-                            height: toast.height,
-                            onClose: () => toast.hide(context),
-                          ),
-                    ).show(context);
-                  },
-                  child: const Text('Card Success'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Toast(
-                      height: 300,
-                      builder:
-                          (toast) => CardToast(
-                            variant: ToastVariant.info,
-                            title: 'Card Information',
-                            message:
-                                'Card toast with placeholder image. Custom text here.',
-                            height: toast.height,
-                            onClose: () => toast.hide(context),
-                          ),
-                    ).show(context);
-                  },
-                  child: const Text('Card Information'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Toast(
-                      height: 300,
-                      builder:
-                          (toast) => CardToast(
-                            variant: ToastVariant.warning,
-                            title: 'Card Warning',
-                            message:
-                                'Warning in card style. Larger height, image included.',
-                            height: toast.height,
-                            onClose: () => toast.hide(context),
-                          ),
-                    ).show(context);
-                  },
-                  child: const Text('Card Warning'),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 12,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        Toast(
+                          height: 300,
+                          builder:
+                              (toast) => CardToast(
+                                variant: ToastVariant.success,
+                                title: 'Card Success',
+                                message:
+                                    'This is a card-style toast with an image and custom text. It has a larger height for more content.',
+                                height: toast.height,
+                                onClose: () => toast.hide(context),
+                              ),
+                        ).show(context);
+                      },
+                      child: const Text('Success'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Toast(
+                          height: 300,
+                          builder:
+                              (toast) => CardToast(
+                                variant: ToastVariant.info,
+                                title: 'Card Information',
+                                message:
+                                    'Card toast with placeholder image. Custom text here.',
+                                height: toast.height,
+                                onClose: () => toast.hide(context),
+                              ),
+                        ).show(context);
+                      },
+                      child: const Text('Information'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Toast(
+                          height: 300,
+                          builder:
+                              (toast) => CardToast(
+                                variant: ToastVariant.warning,
+                                title: 'Card Warning',
+                                message:
+                                    'Warning in card style. Larger height, image included.',
+                                height: toast.height,
+                                onClose: () => toast.hide(context),
+                              ),
+                        ).show(context);
+                      },
+                      child: const Text('Warning'),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -546,7 +541,10 @@ class MyApp extends StatelessWidget {
               children: [
                 Positioned.fill(child: child ?? SizedBox()),
                 SafeArea(
-                  child: ToastViewer(alignment: watch(context, toastAlignment)),
+                  child: ToastViewer(
+                    alignment: watch(context, toastAlignment.call),
+                    delay: Duration(seconds: 5),
+                  ),
                 ),
               ],
             ),
