@@ -473,6 +473,43 @@ class _ToastViewerState extends State<ToastViewer> {
   Timer? _cleanUpDeleteTimer;
   Timer? _hoverDebounceTimer;
   Timer? _periodicDeleteToastTimer;
+
+  /// Helper method to filter toasts by category and create index mapping
+  /// Returns a record with (filteredToasts, filteredToMasterIndexMap)
+  ({
+    List<Toast> toasts,
+    Map<int, int> filteredToMasterIndex,
+  }) _filterToastsByCategory(List<Toast> allToasts) {
+    if (widget.categories == null || widget.categories!.isEmpty) {
+      // No filtering - return all toasts with identity mapping
+      return (
+        toasts: allToasts,
+        filteredToMasterIndex: Map.fromIterable(
+          List.generate(allToasts.length, (i) => i),
+          key: (i) => i,
+          value: (i) => i,
+        ),
+      );
+    } else {
+      // Filter toasts by category
+      final filteredToasts = <Toast>[];
+      final indexMap = <int, int>{};
+      
+      for (var masterIndex = 0; masterIndex < allToasts.length; masterIndex++) {
+        final toast = allToasts[masterIndex];
+        if (widget.categories!.contains(toast.category)) {
+          indexMap[filteredToasts.length] = masterIndex;
+          filteredToasts.add(toast);
+        }
+      }
+      
+      return (
+        toasts: filteredToasts,
+        filteredToMasterIndex: indexMap,
+      );
+    }
+  }
+
   void _setHoverDebounced(bool value, {Duration? delay}) {
     _hoverDebounceTimer?.cancel();
     if (untrack(paused.call)) return;
@@ -661,26 +698,13 @@ class _ToastViewerState extends State<ToastViewer> {
         );
         if (allToasts.isEmpty) return;
 
-        // Filter toasts based on categories (same logic as in build)
-        final List<int> visibleMasterIndices;
-        if (widget.categories == null || widget.categories!.isEmpty) {
-          // All toasts are visible
-          visibleMasterIndices = List.generate(allToasts.length, (i) => i);
-        } else {
-          // Only toasts matching categories are visible
-          visibleMasterIndices = [];
-          for (var masterIndex = 0; masterIndex < allToasts.length; masterIndex++) {
-            final toast = allToasts[masterIndex];
-            if (widget.categories!.contains(toast.category)) {
-              visibleMasterIndices.add(masterIndex);
-            }
-          }
-        }
-
-        if (visibleMasterIndices.isEmpty) return;
+        // Use helper to filter toasts
+        final filtered = _filterToastsByCategory(allToasts);
+        if (filtered.toasts.isEmpty) return;
 
         // Find the first visible toast that's not marked for deletion
-        for (final masterIndex in visibleMasterIndices) {
+        for (final entry in filtered.filteredToMasterIndex.entries) {
+          final masterIndex = entry.value;
           if (!willDeleteToastIndex.contains(masterIndex)) {
             toastProvider.hide(allToasts[masterIndex]);
             break;
@@ -694,37 +718,24 @@ class _ToastViewerState extends State<ToastViewer> {
 
     final allToasts = watch(context, toastProvider.data.call);
     
-    // Filter toasts based on categories if specified
-    // Also create a map from filtered index to master index
-    final List<Toast> toasts;
-    final Map<int, int> filteredToMasterIndex;
-    
-    if (widget.categories == null || widget.categories!.isEmpty) {
-      toasts = allToasts;
-      // Identity mapping: filtered index = master index
-      filteredToMasterIndex = Map.fromIterable(
-        List.generate(allToasts.length, (i) => i),
-        key: (i) => i,
-        value: (i) => i,
-      );
-    } else {
-      toasts = [];
-      filteredToMasterIndex = {};
-      for (var masterIndex = 0; masterIndex < allToasts.length; masterIndex++) {
-        final toast = allToasts[masterIndex];
-        if (widget.categories!.contains(toast.category)) {
-          filteredToMasterIndex[toasts.length] = masterIndex;
-          toasts.add(toast);
-        }
-      }
-    }
+    // Use helper to filter toasts by category
+    final filtered = _filterToastsByCategory(allToasts);
+    final toasts = filtered.toasts;
+    final filteredToMasterIndex = filtered.filteredToMasterIndex;
     
     int calculatePositionedIndex(int filteredIndex) {
-      final masterIndex = filteredToMasterIndex[filteredIndex]!;
       final deletedIndexes = toastProvider.willDeleteToastIndex();
-      final deletedGreaterThanMasterIndex =
-          deletedIndexes.where((index) => index > masterIndex).length;
-      return toasts.length - filteredIndex - deletedGreaterThanMasterIndex - 1;
+      
+      // Count how many filtered toasts after this one are marked for deletion
+      int deletedAfter = 0;
+      for (var i = filteredIndex + 1; i < toasts.length; i++) {
+        final masterIndexForI = filteredToMasterIndex[i]!;
+        if (deletedIndexes.contains(masterIndexForI)) {
+          deletedAfter++;
+        }
+      }
+      
+      return toasts.length - filteredIndex - deletedAfter - 1;
     }
 
     return LayoutBuilder(
