@@ -328,7 +328,6 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Zentoast')),
       body: Center(
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -461,7 +460,7 @@ class HomePage extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   spacing: 12,
                   children: [
-                    ElevatedButton(
+                    OutlinedButton(
                       onPressed: () {
                         Toast(
                           height: 300,
@@ -478,7 +477,7 @@ class HomePage extends StatelessWidget {
                       },
                       child: const Text('Success'),
                     ),
-                    ElevatedButton(
+                    OutlinedButton(
                       onPressed: () {
                         Toast(
                           height: 300,
@@ -495,7 +494,7 @@ class HomePage extends StatelessWidget {
                       },
                       child: const Text('Information'),
                     ),
-                    ElevatedButton(
+                    OutlinedButton(
                       onPressed: () {
                         Toast(
                           height: 300,
@@ -530,8 +529,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Toaster',
-      home: HomePage(),
+      title: 'Zentoast',
+      home: const HomePage(),
 
       /// Add this if you want global toast
       builder:
