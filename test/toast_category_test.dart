@@ -381,4 +381,85 @@ void main() {
       expect(find.text('Old Style Toast'), findsOneWidget);
     });
   });
+
+  group('Category filtering with toast deletion', () {
+    testWidgets('should correctly handle toast deletion with filtered viewer',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ToastProvider.create(
+            child: Builder(
+              builder: (context) {
+                return Scaffold(
+                  body: Stack(
+                    children: [
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                // Add toasts with different categories
+                                Toast(
+                                  category: ToastCategory.general,
+                                  builder: (toast) => ElevatedButton(
+                                    onPressed: () => toast.hide(context),
+                                    child: const Text('General Toast'),
+                                  ),
+                                ).show(context);
+                                Toast(
+                                  category: ToastCategory.error,
+                                  builder: (toast) => ElevatedButton(
+                                    onPressed: () => toast.hide(context),
+                                    child: const Text('Error Toast'),
+                                  ),
+                                ).show(context);
+                                Toast(
+                                  category: ToastCategory.warning,
+                                  builder: (toast) => ElevatedButton(
+                                    onPressed: () => toast.hide(context),
+                                    child: const Text('Warning Toast'),
+                                  ),
+                                ).show(context);
+                              },
+                              child: const Text('Show Toasts'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Viewer showing only errors and warnings
+                      const SafeArea(
+                        child: ToastViewer(
+                          categories: [
+                            ToastCategory.error,
+                            ToastCategory.warning,
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Show Toasts'));
+      await tester.pumpAndSettle();
+
+      // Only error and warning should be visible
+      expect(find.text('General Toast'), findsNothing);
+      expect(find.text('Error Toast'), findsOneWidget);
+      expect(find.text('Warning Toast'), findsOneWidget);
+
+      // Hide the error toast
+      await tester.tap(find.text('Error Toast'));
+      await tester.pumpAndSettle();
+
+      // Error should be gone, warning should still be there
+      expect(find.text('Error Toast'), findsNothing);
+      expect(find.text('Warning Toast'), findsOneWidget);
+    });
+  });
 }

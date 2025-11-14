@@ -678,17 +678,36 @@ class _ToastViewerState extends State<ToastViewer> {
     final allToasts = watch(context, toastProvider.data.call);
     
     // Filter toasts based on categories if specified
-    final toasts = (widget.categories == null || widget.categories!.isEmpty)
-        ? allToasts
-        : allToasts
-            .where((toast) => widget.categories!.contains(toast.category))
-            .toList();
+    // Also create a map from filtered index to master index
+    final List<Toast> toasts;
+    final Map<int, int> filteredToMasterIndex;
     
-    int calculatePositionedIndex(int realIndex) {
+    if (widget.categories == null || widget.categories!.isEmpty) {
+      toasts = allToasts;
+      // Identity mapping: filtered index = master index
+      filteredToMasterIndex = Map.fromIterable(
+        List.generate(allToasts.length, (i) => i),
+        key: (i) => i,
+        value: (i) => i,
+      );
+    } else {
+      toasts = [];
+      filteredToMasterIndex = {};
+      for (var masterIndex = 0; masterIndex < allToasts.length; masterIndex++) {
+        final toast = allToasts[masterIndex];
+        if (widget.categories!.contains(toast.category)) {
+          filteredToMasterIndex[toasts.length] = masterIndex;
+          toasts.add(toast);
+        }
+      }
+    }
+    
+    int calculatePositionedIndex(int filteredIndex) {
+      final masterIndex = filteredToMasterIndex[filteredIndex]!;
       final deletedIndexes = toastProvider.willDeleteToastIndex();
-      final deletedGreaterThanRealIndex =
-          deletedIndexes.where((index) => index > realIndex).length;
-      return toasts.length - realIndex - deletedGreaterThanRealIndex - 1;
+      final deletedGreaterThanMasterIndex =
+          deletedIndexes.where((index) => index > masterIndex).length;
+      return toasts.length - filteredIndex - deletedGreaterThanMasterIndex - 1;
     }
 
     return LayoutBuilder(
@@ -704,10 +723,11 @@ class _ToastViewerState extends State<ToastViewer> {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                for (final (index, toast) in toasts.indexed)
+                for (final (filteredIndex, toast) in toasts.indexed)
                   SignalBuilder(
                     builder: (context) {
-                      final positionedIndex = calculatePositionedIndex(index);
+                      final masterIndex = filteredToMasterIndex[filteredIndex]!;
+                      final positionedIndex = calculatePositionedIndex(filteredIndex);
                       final indexToast = writableComputed<int>(
                         context,
                         get:
@@ -726,14 +746,14 @@ class _ToastViewerState extends State<ToastViewer> {
                           );
                           toastProvider.indexToastMap({
                             ...toastProvider.indexToastMap(),
-                            toast.id: index,
+                            toast.id: masterIndex,
                           });
                         }
                       });
 
                       final isMarkDeleted = toastProvider
                           .willDeleteToastIndex()
-                          .contains(index);
+                          .contains(masterIndex);
                       final isFirstAppear = indexToast() == -1;
                       final hovered = isHovered() || paused();
                       final gap = toastTheme.gap;
@@ -742,9 +762,10 @@ class _ToastViewerState extends State<ToastViewer> {
                         double height = 0;
                         List<Toast> visualToasts = [];
                         for (var i = toasts.length - 1; i >= 0; i--) {
+                          final masterIndexForI = filteredToMasterIndex[i]!;
                           if (toastProvider //
                               .willDeleteToastIndex()
-                              .contains(i)) {
+                              .contains(masterIndexForI)) {
                             continue;
                           }
                           visualToasts.add(toasts[i]);
@@ -781,7 +802,7 @@ class _ToastViewerState extends State<ToastViewer> {
                       return _buildToastCard(
                         context,
                         toast,
-                        index,
+                        masterIndex,
                         width,
                       ).motion(
                         MotionArgument.offset(
