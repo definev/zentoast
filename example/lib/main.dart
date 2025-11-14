@@ -559,13 +559,10 @@ class MyApp extends StatelessWidget {
                 const SafeArea(
                   child: Align(
                     alignment: Alignment.bottomLeft,
-                    child: SizedBox(
-                      width: 400,
-                      child: ToastViewer(
-                        alignment: Alignment.bottomLeft,
-                        delay: Duration(seconds: 8),
-                        categories: [ToastCategory.error],
-                      ),
+                    child: ToastViewer(
+                      alignment: Alignment.bottomLeft,
+                      delay: Duration(seconds: 8),
+                      categories: [ToastCategory.error],
                     ),
                   ),
                 ),
