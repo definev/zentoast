@@ -723,6 +723,16 @@ class _ToastViewerState extends State<ToastViewer> {
     int calculatePositionedIndex(int filteredIndex) {
       final deletedIndexes = toastProvider.willDeleteToastIndex();
 
+      // Count how many toasts in the current filtered list are NOT marked for deletion
+      // This gives us the actual visible count
+      int visibleCount = 0;
+      for (var i = 0; i < toasts.length; i++) {
+        final masterIndexForI = filteredToMasterIndex[i]!;
+        if (!deletedIndexes.contains(masterIndexForI)) {
+          visibleCount++;
+        }
+      }
+
       // Count how many filtered toasts after this one are marked for deletion
       int deletedAfter = 0;
       for (var i = filteredIndex + 1; i < toasts.length; i++) {
@@ -732,7 +742,7 @@ class _ToastViewerState extends State<ToastViewer> {
         }
       }
 
-      return toasts.length - filteredIndex - deletedAfter - 1;
+      return visibleCount - filteredIndex - deletedAfter - 1;
     }
 
     return LayoutBuilder(
