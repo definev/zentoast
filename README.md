@@ -228,7 +228,7 @@ ToastViewer(alignment: Alignment.bottomRight)
 
 ## Multiple Viewers
 
-You can show independent toasts in multiple corners:
+You can show independent toasts in multiple corners for each toast category:
 
 ```dart
 Stack(
@@ -239,6 +239,8 @@ Stack(
       child: ToastViewer(
         alignment: Alignment.topRight,
         delay: Duration(seconds: 3),
+        // Display all toast no filter
+        categories: null,
       ),
     ),
 
@@ -246,6 +248,11 @@ Stack(
       child: ToastViewer(
         alignment: Alignment.bottomCenter,
         delay: Duration(seconds: 5),
+        // Display only `Toast` with specific category
+        categories: [
+          ToastCategory.success,
+          ToastCategory.error,
+        ],
       ),
     ),
   ],
@@ -253,6 +260,59 @@ Stack(
 ```
 
 Animations stay smooth even when dismissing multiple stacks simultaneously.
+
+---
+
+## Categorize Toast
+
+Organize notifications by `ToastCategory` so each `ToastViewer` can focus on
+the messages it cares about. Every toast defaults to `ToastCategory.general`,
+and you can introduce new categories with a simple `const ToastCategory('name')`.
+
+```dart
+const billingCategory = ToastCategory('billing');
+
+void _showCategorizedToasts(BuildContext context) {
+  Toast(
+    category: ToastCategory.success,
+    builder: (toast) => SuccessToast(onClose: () => toast.hide(context)),
+  ).show(context);
+
+  Toast(
+    category: ToastCategory.error,
+    builder: (toast) => ErrorToast(onClose: () => toast.hide(context)),
+  ).show(context);
+
+  Toast(
+    category: billingCategory,
+    builder: (toast) => BillingToast(onClose: () => toast.hide(context)),
+  ).show(context);
+}
+
+Widget build(BuildContext context) {
+  return ToastProvider.create(
+    child: Stack(
+      children: [
+        ToastViewer(
+          alignment: Alignment.topRight,
+          categories: const [
+            ToastCategory.success,
+            ToastCategory.error,
+          ],
+        ),
+        ToastViewer(
+          alignment: Alignment.bottomLeft,
+          categories: const [billingCategory],
+          delay: const Duration(milliseconds: 300),
+        ),
+      ],
+    ),
+  );
+}
+```
+
+With this setup, success and error notifications render at the top-right,
+while billing alerts stay anchored at the bottom-left with a custom delay.
 
 ---
 
@@ -275,6 +335,7 @@ ToastThemeProvider(
 ```dart
 Toast(
   height: 100,
+  category: ToastCategory.success, // Config customize category
   builder: (toast) => YourToastWidget(
     onClose: () => toast.hide(context),
   ),
@@ -284,6 +345,7 @@ ToastViewer(
   alignment: Alignment.topRight,
   delay: Duration(seconds: 4),
   visibleCount: 3,
+  categories: [ToastCategory.success, ToastCategory('card')],
 );
 ```
 

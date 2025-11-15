@@ -1,3 +1,7 @@
+## 0.1.0
+- Introduce `ToastCategory` filtering across multiple `ToastViewer` instances
+- Document category usage with hands-on README examples
+
 ## 0.0.3
 - Fix lint
 
