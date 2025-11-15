@@ -1,6 +1,6 @@
 name: zentoast
 description: "A headless, fully customizable toast system for Flutter."
-version: 0.1.1
+version: 0.1.2
 homepage: https://github.com/definev/zentoast
 
 environment:

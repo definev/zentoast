@@ -7,6 +7,8 @@ You design the UI — **zentoast** takes care of animation, physics, queuing, ge
 
 [Demo here 🚀](https://zentoast.vercel.app/)
 
+![demo.gif](https://github.com/definev/zentoast/blob/main/assets/demo.gif?raw=true)
+
 ## Features
 
 - ✨ **Headless Architecture** – Bring your own widgets & design

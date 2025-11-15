@@ -1,3 +1,9 @@
+## 0.1.2
+- Add demo gif
+
+## 0.1.1
+- Add great banner for zentoast :-)
+
 ## 0.1.0
 - Introduce `ToastCategory` filtering across multiple `ToastViewer` instances
 - Document category usage with hands-on README examples
