@@ -423,6 +423,8 @@ class ToastViewer extends StatefulWidget {
     this.delay = const Duration(milliseconds: 2000),
     this.visibleCount = 3,
     this.categories,
+    this.width,
+    this.thresholdFullWidth,
   });
 
   /// Duration before a toast automatically dismisses.
@@ -466,6 +468,12 @@ class ToastViewer extends StatefulWidget {
   /// )
   /// ```
   final List<ToastCategory>? categories;
+
+  /// Width of the toast.
+  final double? width;
+
+  /// Threshold for full width.
+  final double? thresholdFullWidth;
 
   @override
   State<ToastViewer> createState() => _ToastViewerState();
@@ -757,7 +765,10 @@ class _ToastViewerState extends State<ToastViewer> {
       builder: (context, constraints) {
         final size = constraints.biggest;
 
-        final width = size.width < 600.0 ? size.width : 400.0;
+        final width =
+            size.width < (widget.thresholdFullWidth ?? 600)
+                ? size.width
+                : (widget.width ?? 400);
 
         return Align(
           alignment: widget.alignment,

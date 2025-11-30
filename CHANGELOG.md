@@ -1,3 +1,6 @@
+## 0.1.3
+- Add `thresholdFullWidth` and `width` parameters to `ToastViewer`
+
 ## 0.1.2
 - Add demo gif
 
