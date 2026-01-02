@@ -353,7 +353,7 @@ class ToastProvider extends InheritedWidget {
   /// ToastProvider.of(context).show(toast);
   /// ```
   void show(Toast toast) {
-    data([...data(), toast]);
+    data.set([...data(), toast]);
   }
 
   /// Removes a toast from the stack with animation.
@@ -370,7 +370,7 @@ class ToastProvider extends InheritedWidget {
       return;
     }
 
-    willDeleteToastIndex({...willDeleteToastIndex(), index});
+    willDeleteToastIndex.set({...willDeleteToastIndex(), index});
   }
 
   @override
@@ -532,7 +532,7 @@ class _ToastViewerState extends State<ToastViewer> {
     _hoverDebounceTimer?.cancel();
     if (untrack(paused.call)) return;
     _hoverDebounceTimer = Timer(delay ?? const Duration(milliseconds: 200), () {
-      if (!untrack(paused.call)) isHovered(value);
+      if (!untrack(paused.call)) isHovered.set(value);
     });
   }
 
@@ -590,31 +590,31 @@ class _ToastViewerState extends State<ToastViewer> {
                           child: GestureDetector(
                             onTap: () {
                               if (isHovered() == false) {
-                                paused(!paused());
+                                paused.set(!paused());
                               }
                             },
                             onVerticalDragStart: (details) {
-                              manualDragPosition(0.0);
-                              globalPosition(details.globalPosition);
-                              onDrag(true);
-                              toastProvider.onDragToastIndex({
+                              manualDragPosition.set(0.0);
+                              globalPosition.set(details.globalPosition);
+                              onDrag.set(true);
+                              toastProvider.onDragToastIndex.set({
                                 ...toastProvider.onDragToastIndex(),
                                 index,
                               });
                             },
                             onVerticalDragCancel: () {
-                              manualDragPosition(0.0);
-                              globalPosition(Offset.zero);
-                              onDrag(false);
-                              toastProvider.onDragToastIndex(
+                              manualDragPosition.set(0.0);
+                              globalPosition.set(Offset.zero);
+                              onDrag.set(false);
+                              toastProvider.onDragToastIndex.set(
                                 {...toastProvider.onDragToastIndex()}
                                   ..remove(index),
                               );
                             },
                             onVerticalDragEnd: (details) {
-                              globalPosition(Offset.zero);
-                              onDrag(false);
-                              toastProvider.onDragToastIndex(
+                              globalPosition.set(Offset.zero);
+                              onDrag.set(false);
+                              toastProvider.onDragToastIndex.set(
                                 {...toastProvider.onDragToastIndex()}
                                   ..remove(index),
                               );
@@ -624,14 +624,14 @@ class _ToastViewerState extends State<ToastViewer> {
                                     (widget.alignment.y < 0 && v < 50)) {
                                   toastProvider.hide(toast);
                                 } else {
-                                  manualDragPosition(0.0);
+                                  manualDragPosition.set(0.0);
                                 }
                               }
                             },
                             onVerticalDragUpdate: (details) {
                               final delta =
                                   details.globalPosition - globalPosition();
-                              manualDragPosition(delta.dy);
+                              manualDragPosition.set(delta.dy);
                             },
                             child: SizedBox(
                               height: toast.height + toastTheme.gap,
@@ -672,8 +672,8 @@ class _ToastViewerState extends State<ToastViewer> {
 
   @override
   void dispose() {
-    _wipeToastEffect?.dispose();
-    _periodicDeleteToastEffect?.dispose();
+    _wipeToastEffect?.call();
+    _periodicDeleteToastEffect?.call();
     super.dispose();
   }
 
@@ -698,8 +698,8 @@ class _ToastViewerState extends State<ToastViewer> {
         _cleanUpDeleteTimer = Timer(
           const Duration(milliseconds: 250),
           () => batch(() {
-            toastProvider.data([]);
-            toastProvider.willDeleteToastIndex({});
+            toastProvider.data.set([]);
+            toastProvider.willDeleteToastIndex.set({});
           }),
         );
       }
@@ -791,7 +791,7 @@ class _ToastViewerState extends State<ToastViewer> {
                             (old) =>
                                 toastProvider.indexToastMap()[toast.id] ?? -1,
                         set:
-                            (value) => toastProvider.indexToastMap({
+                            (value) => toastProvider.indexToastMap.set({
                               ...toastProvider.indexToastMap(),
                               toast.id: value,
                             }),
@@ -799,7 +799,7 @@ class _ToastViewerState extends State<ToastViewer> {
                       effect(context, () async {
                         if (indexToast() == -1) {
                           await Future.delayed(Durations.medium2);
-                          indexToast(masterIndex);
+                          indexToast.set(masterIndex);
                         }
                       });
 

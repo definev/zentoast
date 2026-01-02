@@ -1,3 +1,6 @@
+## 0.2.0
+- Update `oref` to `^2.6.0`
+
 ## 0.1.3
 - Add `thresholdFullWidth` and `width` parameters to `ToastViewer`
 
