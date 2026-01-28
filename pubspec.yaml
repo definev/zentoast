@@ -12,7 +12,7 @@ dependencies:
     sdk: flutter
 
   motor: ^1.1.0
-  oref: ^2.6.0
+  oref: ^2.8.0
 
 dev_dependencies:
   flutter_test:
