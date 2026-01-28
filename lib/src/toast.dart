@@ -510,17 +510,15 @@ class ToastViewer extends StatelessWidget {
       );
     }
 
-    final filteredWillDeleteToastIndex = computed<Set<int>>(context, (_) {
+    Set<int> filteredDeleteIndexes() {
       final allToasts = toastProvider.data();
       final willDeleteToastIndex = toastProvider.willDeleteToastIndex();
-      if (!hasCategoryFilter) {
-        return willDeleteToastIndex;
-      }
+      if (!hasCategoryFilter) return willDeleteToastIndex;
       return {
         for (final index in willDeleteToastIndex)
           if (categories!.contains(allToasts[index].category)) index,
       };
-    });
+    }
 
     effect(context, () {
       onEffectCleanup(() {
@@ -555,16 +553,13 @@ class ToastViewer extends StatelessWidget {
         timers.periodicDelete = null;
       });
 
-      final _ = filteredWillDeleteToastIndex();
-      final _ = toastProvider.data();
+      filteredDeleteIndexes();
       if (toastProvider.onDragToastIndex().isNotEmpty || paused()) return;
       if (delay == null) return;
 
       timers.periodicDelete = Timer(delay!, () {
         final allToasts = untrack(() => toastProvider.data());
-        final willDeleteToastIndex = untrack(
-          () => filteredWillDeleteToastIndex(),
-        );
+        final willDeleteToastIndex = untrack(filteredDeleteIndexes);
         if (allToasts.isEmpty) return;
 
         final filtered = filterToasts(allToasts);
@@ -601,7 +596,7 @@ class ToastViewer extends StatelessWidget {
             final filtered = filterToasts(allToasts);
             final toasts = filtered.toasts;
             final masterIndexes = filtered.masterIndexes;
-            final deletedIndexes = filteredWillDeleteToastIndex();
+            final deletedIndexes = filteredDeleteIndexes();
             final hovered = isHovered() || paused();
             final gap = toastTheme.gap;
 
