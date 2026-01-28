@@ -302,10 +302,14 @@ class ToastProvider extends InheritedWidget {
     return Builder(
       builder: (context) {
         final data = ReactiveList<Toast>.scoped(context, const []);
-        final willDeleteToastIndex =
-            ReactiveSet<int>.scoped(context, const <int>{});
-        final onDragToastIndex =
-            ReactiveSet<int>.scoped(context, const <int>{});
+        final willDeleteToastIndex = ReactiveSet<int>.scoped(
+          context,
+          const <int>{},
+        );
+        final onDragToastIndex = ReactiveSet<int>.scoped(
+          context,
+          const <int>{},
+        );
 
         return ToastProvider._(
           data: data,
@@ -665,55 +669,13 @@ class ToastViewer extends StatelessWidget {
                           final dragOpacity =
                               dragPosition * alignment.y.sign > 20 ? 0.0 : 1.0;
 
-                          Widget dragLayer(
-                            double userDragPosition,
-                            double opacity,
-                          ) {
-                            return Transform.translate(
-                              offset: Offset(0, userDragPosition),
-                              child: Opacity(
-                                opacity: opacity.clamp(0, 1),
-                                child: GestureDetector(
-                                  onTap: () {
-                                    if (isHovered() == false) {
-                                      paused.set(!paused());
-                                    }
-                                  },
-                                  onVerticalDragStart: (_) {
-                                    manualDragPosition.set(0.0);
-                                    toastProvider.onDragToastIndex.add(
-                                      masterIndex,
-                                    );
-                                  },
-                                  onVerticalDragUpdate: (details) {
-                                    manualDragPosition.set(
-                                      manualDragPosition() + details.delta.dy,
-                                    );
-                                  },
-                                  onVerticalDragCancel:
-                                      () => endDrag(reset: true),
-                                  onVerticalDragEnd:
-                                      (details) => endDrag(details: details),
-                                  child: SizedBox(
-                                    height: toast.height + gap,
-                                    child: ColoredBox(
-                                      color: Colors.transparent,
-                                      child: Align(
-                                        alignment: alignment,
-                                        child: toast.builder(toast),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }
-
-                          Widget toastCard(
+                          return ((
                             Offset transform,
                             double scale,
                             double opacity,
                           ) {
+                            final clampedOpacity =
+                                opacity.clamp(0, 1).toDouble();
                             return Positioned(
                               top: isTop ? transform.dy : null,
                               bottom: isBottom ? transform.dy : null,
@@ -721,17 +683,68 @@ class ToastViewer extends StatelessWidget {
                               right: isRight ? transform.dx : null,
                               width: toastWidth,
                               child: IgnorePointer(
-                                ignoring: opacity.clamp(0, 1) == 0,
+                                ignoring: clampedOpacity == 0,
                                 child: RepaintBoundary(
                                   key: ValueKey(toast.id),
                                   child: Transform.scale(
                                     scale: scale,
                                     child: Opacity(
-                                      opacity: opacity.clamp(0, 1),
+                                      opacity: clampedOpacity,
                                       child: MouseRegion(
                                         onEnter: (_) => setHoverDebounced(true),
                                         onExit: (_) => setHoverDebounced(false),
-                                        child: dragLayer.motion(
+                                        child: ((
+                                          double userDragPosition,
+                                          double opacity,
+                                        ) {
+                                          return Transform.translate(
+                                            offset: Offset(0, userDragPosition),
+                                            child: Opacity(
+                                              opacity:
+                                                  opacity
+                                                      .clamp(0, 1)
+                                                      .toDouble(),
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  if (!isHovered()) {
+                                                    paused.set(!paused());
+                                                  }
+                                                },
+                                                onVerticalDragStart: (_) {
+                                                  manualDragPosition.set(0.0);
+                                                  toastProvider.onDragToastIndex
+                                                      .add(masterIndex);
+                                                },
+                                                onVerticalDragUpdate: (
+                                                  details,
+                                                ) {
+                                                  manualDragPosition.set(
+                                                    manualDragPosition() +
+                                                        details.delta.dy,
+                                                  );
+                                                },
+                                                onVerticalDragCancel:
+                                                    () => endDrag(reset: true),
+                                                onVerticalDragEnd:
+                                                    (details) => endDrag(
+                                                      details: details,
+                                                    ),
+                                                child: SizedBox(
+                                                  height: toast.height + gap,
+                                                  child: ColoredBox(
+                                                    color: Colors.transparent,
+                                                    child: Align(
+                                                      alignment: alignment,
+                                                      child: toast.builder(
+                                                        toast,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }).motion(
                                           MotionArgument.single(
                                             dragPosition,
                                             toastProvider.onDragToastIndex
@@ -750,9 +763,7 @@ class ToastViewer extends StatelessWidget {
                                 ),
                               ),
                             );
-                          }
-
-                          return toastCard.motion(
+                          }).motion(
                             MotionArgument.offset(
                               Offset(0.0, transformY),
                               isFirstAppear
