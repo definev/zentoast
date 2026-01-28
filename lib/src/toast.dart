@@ -582,10 +582,7 @@ class ToastViewer extends StatelessWidget {
             final hovered = isHovered() || paused();
             final gap = toastTheme.gap;
 
-            final positions = List<(int, double)>.filled(masterIndexes.length, (
-              0,
-              0.0,
-            ));
+            final positions = List.filled(masterIndexes.length, (0, 0.0));
             var visualIndex = 0;
             var expandedOffset = 0.0;
             for (var i = masterIndexes.length - 1; i >= 0; i--) {
