@@ -270,7 +270,6 @@ class ToastThemeProvider extends StatelessWidget {
 class ToastProvider extends InheritedWidget {
   const ToastProvider._({
     required this.data,
-    required this.indexToastMap,
     required this.willDeleteToastIndex,
     required this.onDragToastIndex,
     required super.child,
@@ -303,13 +302,11 @@ class ToastProvider extends InheritedWidget {
     return Builder(
       builder: (context) {
         final data = signal<List<Toast>>(context, []);
-        final indexToastMap = signal<Map<String, int>>(context, {});
         final willDeleteToastIndex = signal<Set<int>>(context, {});
         final onDragToastIndex = signal<Set<int>>(context, {});
 
         return ToastProvider._(
           data: data,
-          indexToastMap: indexToastMap,
           willDeleteToastIndex: willDeleteToastIndex,
           onDragToastIndex: onDragToastIndex,
           child: child,
@@ -325,10 +322,6 @@ class ToastProvider extends InheritedWidget {
   final WritableSignal<List<Toast>> data;
 
   /// Maps toast IDs to their indices in the stack.
-  ///
-  /// Used internally for tracking toast positions during animations.
-  @visibleForTesting
-  final WritableSignal<Map<String, int>> indexToastMap;
 
   /// Set of toast indices that are marked for deletion.
   ///
