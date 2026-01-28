@@ -510,30 +510,24 @@ class ToastViewer extends StatelessWidget {
       );
     }
 
-    Set<int> filteredDeleteIndexes() {
-      final allToasts = toastProvider.data();
-      final willDeleteToastIndex = toastProvider.willDeleteToastIndex();
-      if (!hasCategoryFilter) return willDeleteToastIndex;
-      return {
-        for (final index in willDeleteToastIndex)
-          if (categories!.contains(allToasts[index].category)) index,
-      };
+    void resetCleanUpDelete() {
+      timers.cleanUpDelete?.cancel();
+      timers.cleanUpDelete = null;
+    }
+
+    void resetPeriodicDelete() {
+      timers.periodicDelete?.cancel();
+      timers.periodicDelete = null;
     }
 
     effect(context, () {
-      onEffectCleanup(() {
-        timers.cleanUpDelete?.cancel();
-        timers.cleanUpDelete = null;
-      });
-      onEffectDispose(() {
-        timers.cleanUpDelete?.cancel();
-        timers.cleanUpDelete = null;
-      });
+      onEffectCleanup(resetCleanUpDelete);
+      onEffectDispose(resetCleanUpDelete);
       final deletedIndexes = toastProvider.willDeleteToastIndex();
       final toasts = toastProvider.data();
 
       if (deletedIndexes.length == toasts.length && deletedIndexes.isNotEmpty) {
-        timers.cleanUpDelete?.cancel();
+        resetCleanUpDelete();
         timers.cleanUpDelete = Timer(
           const Duration(milliseconds: 250),
           () => batch(() {
@@ -544,29 +538,31 @@ class ToastViewer extends StatelessWidget {
       }
     });
     effect(context, () {
-      onEffectCleanup(() {
-        timers.periodicDelete?.cancel();
-        timers.periodicDelete = null;
-      });
-      onEffectDispose(() {
-        timers.periodicDelete?.cancel();
-        timers.periodicDelete = null;
-      });
-
-      filteredDeleteIndexes();
+      onEffectCleanup(resetPeriodicDelete);
+      onEffectDispose(resetPeriodicDelete);
+      toastProvider.willDeleteToastIndex();
+      toastProvider.data();
       if (toastProvider.onDragToastIndex().isNotEmpty || paused()) return;
       if (delay == null) return;
 
       timers.periodicDelete = Timer(delay!, () {
         final allToasts = untrack(() => toastProvider.data());
-        final willDeleteToastIndex = untrack(filteredDeleteIndexes);
         if (allToasts.isEmpty) return;
 
         final filtered = filterToasts(allToasts);
         if (filtered.toasts.isEmpty) return;
 
+        final willDeleteToastIndex = untrack(
+          () => toastProvider.willDeleteToastIndex(),
+        );
+        final deleteIndexes =
+            hasCategoryFilter
+                ? willDeleteToastIndex.intersection(
+                  filtered.masterIndexes.toSet(),
+                )
+                : willDeleteToastIndex;
         for (final masterIndex in filtered.masterIndexes) {
-          if (!willDeleteToastIndex.contains(masterIndex)) {
+          if (!deleteIndexes.contains(masterIndex)) {
             toastProvider.hide(allToasts[masterIndex]);
             break;
           }
@@ -596,7 +592,13 @@ class ToastViewer extends StatelessWidget {
             final filtered = filterToasts(allToasts);
             final toasts = filtered.toasts;
             final masterIndexes = filtered.masterIndexes;
-            final deletedIndexes = filteredDeleteIndexes();
+            final willDeleteToastIndex = toastProvider.willDeleteToastIndex();
+            final deletedIndexes =
+                hasCategoryFilter
+                    ? willDeleteToastIndex.intersection(
+                      masterIndexes.toSet(),
+                    )
+                    : willDeleteToastIndex;
             final hovered = isHovered() || paused();
             final gap = toastTheme.gap;
 
