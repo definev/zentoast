@@ -650,10 +650,8 @@ class ToastViewer extends StatelessWidget {
                           });
 
                           final manualDragPosition = signal(context, 0.0);
-                          final onDrag = signal(context, false);
 
                           void endDrag() {
-                            onDrag.set(false);
                             toastProvider.onDragToastIndex.set(
                               {...toastProvider.onDragToastIndex()}
                                 ..remove(masterIndex),
@@ -662,7 +660,6 @@ class ToastViewer extends StatelessWidget {
 
                           void onDragStart(DragStartDetails details) {
                             manualDragPosition.set(0.0);
-                            onDrag.set(true);
                             toastProvider.onDragToastIndex.set({
                               ...toastProvider.onDragToastIndex(),
                               masterIndex,
@@ -711,8 +708,11 @@ class ToastViewer extends StatelessWidget {
                                       (dragPosition < -20 && alignment.y < 0)
                                   ? 0.0
                                   : 1.0;
+                          final isDragging = toastProvider
+                              .onDragToastIndex()
+                              .contains(masterIndex);
                           final dragMotion =
-                              onDrag()
+                              isDragging
                                   ? MotionPresets.instant
                                   : const Motion.snappySpring();
 
