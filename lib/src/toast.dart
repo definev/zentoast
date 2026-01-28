@@ -301,9 +301,11 @@ class ToastProvider extends InheritedWidget {
   static Widget create({required Widget child}) {
     return Builder(
       builder: (context) {
-        final data = signal<List<Toast>>(context, []);
-        final willDeleteToastIndex = signal<Set<int>>(context, {});
-        final onDragToastIndex = signal<Set<int>>(context, {});
+        final data = ReactiveList<Toast>.scoped(context, const []);
+        final willDeleteToastIndex =
+            ReactiveSet<int>.scoped(context, const <int>{});
+        final onDragToastIndex =
+            ReactiveSet<int>.scoped(context, const <int>{});
 
         return ToastProvider._(
           data: data,
@@ -317,21 +319,21 @@ class ToastProvider extends InheritedWidget {
 
   /// The list of active toasts in the stack.
   ///
-  /// This is a reactive signal that updates when toasts are added or removed.
+  /// This is a reactive list that updates when toasts are added or removed.
   @visibleForTesting
-  final WritableSignal<List<Toast>> data;
+  final ReactiveList<Toast> data;
 
   /// Set of toast indices that are marked for deletion.
   ///
   /// Used internally to track toasts that are animating out.
   @visibleForTesting
-  final WritableSignal<Set<int>> willDeleteToastIndex;
+  final ReactiveSet<int> willDeleteToastIndex;
 
   /// Set of toast indices that are currently being dragged.
   ///
   /// Used internally to pause auto-dismissal during drag gestures.
   @visibleForTesting
-  final WritableSignal<Set<int>> onDragToastIndex;
+  final ReactiveSet<int> onDragToastIndex;
 
   /// Adds a toast to the stack.
   ///
@@ -344,7 +346,7 @@ class ToastProvider extends InheritedWidget {
   /// ToastProvider.of(context).show(toast);
   /// ```
   void show(Toast toast) {
-    data.set([...data(), toast]);
+    data.add(toast);
   }
 
   /// Removes a toast from the stack with animation.
@@ -356,12 +358,11 @@ class ToastProvider extends InheritedWidget {
   /// ToastProvider.of(context).hide(toast);
   /// ```
   void hide(Toast toast) {
-    final index = data().indexOf(toast);
+    final index = data.indexOf(toast);
     if (index == -1) {
       return;
     }
-
-    willDeleteToastIndex.set({...willDeleteToastIndex(), index});
+    willDeleteToastIndex.add(index);
   }
 
   @override
@@ -474,12 +475,11 @@ class ToastViewer extends StatelessWidget {
     final timers = useMemoized(context, _ToastViewerTimers.new);
     onUnmounted(context, timers.dispose);
 
-    final hasCategoryFilter = categories?.isNotEmpty ?? false;
-
     ({List<Toast> toasts, List<int> masterIndexes}) filterToasts(
       List<Toast> allToasts,
     ) {
-      if (!hasCategoryFilter) {
+      final categories = this.categories;
+      if (categories == null || categories.isEmpty) {
         return (
           toasts: allToasts,
           masterIndexes: List<int>.generate(allToasts.length, (i) => i),
@@ -490,7 +490,7 @@ class ToastViewer extends StatelessWidget {
       final masterIndexes = <int>[];
       for (var i = 0; i < allToasts.length; i++) {
         final toast = allToasts[i];
-        if (categories!.contains(toast.category)) {
+        if (categories.contains(toast.category)) {
           masterIndexes.add(i);
           filteredToasts.add(toast);
         }
@@ -523,16 +523,16 @@ class ToastViewer extends StatelessWidget {
     effect(context, () {
       onEffectCleanup(resetCleanUpDelete);
       onEffectDispose(resetCleanUpDelete);
-      final deletedIndexes = toastProvider.willDeleteToastIndex();
-      final toasts = toastProvider.data();
+      final deletedIndexes = toastProvider.willDeleteToastIndex;
 
-      if (deletedIndexes.length == toasts.length && deletedIndexes.isNotEmpty) {
+      if (deletedIndexes.isNotEmpty &&
+          deletedIndexes.length == toastProvider.data.length) {
         resetCleanUpDelete();
         timers.cleanUpDelete = Timer(
           const Duration(milliseconds: 250),
           () => batch(() {
-            toastProvider.data.set([]);
-            toastProvider.willDeleteToastIndex.set({});
+            toastProvider.data.clear();
+            toastProvider.willDeleteToastIndex.clear();
           }),
         );
       }
@@ -540,29 +540,23 @@ class ToastViewer extends StatelessWidget {
     effect(context, () {
       onEffectCleanup(resetPeriodicDelete);
       onEffectDispose(resetPeriodicDelete);
-      toastProvider.willDeleteToastIndex();
-      toastProvider.data();
-      if (toastProvider.onDragToastIndex().isNotEmpty || paused()) return;
+      toastProvider.willDeleteToastIndex.length;
+      toastProvider.data.length;
+      if (toastProvider.onDragToastIndex.isNotEmpty || paused()) return;
       if (delay == null) return;
 
       timers.periodicDelete = Timer(delay!, () {
-        final allToasts = untrack(() => toastProvider.data());
+        final allToasts = untrack(() => toastProvider.data);
         if (allToasts.isEmpty) return;
 
         final filtered = filterToasts(allToasts);
         if (filtered.toasts.isEmpty) return;
 
         final willDeleteToastIndex = untrack(
-          () => toastProvider.willDeleteToastIndex(),
+          () => toastProvider.willDeleteToastIndex,
         );
-        final deleteIndexes =
-            hasCategoryFilter
-                ? willDeleteToastIndex.intersection(
-                  filtered.masterIndexes.toSet(),
-                )
-                : willDeleteToastIndex;
         for (final masterIndex in filtered.masterIndexes) {
-          if (!deleteIndexes.contains(masterIndex)) {
+          if (!willDeleteToastIndex.contains(masterIndex)) {
             toastProvider.hide(allToasts[masterIndex]);
             break;
           }
@@ -588,17 +582,11 @@ class ToastViewer extends StatelessWidget {
 
         return SignalBuilder(
           builder: (context) {
-            final allToasts = toastProvider.data();
+            final allToasts = toastProvider.data;
             final filtered = filterToasts(allToasts);
             final toasts = filtered.toasts;
             final masterIndexes = filtered.masterIndexes;
-            final willDeleteToastIndex = toastProvider.willDeleteToastIndex();
-            final deletedIndexes =
-                hasCategoryFilter
-                    ? willDeleteToastIndex.intersection(
-                      masterIndexes.toSet(),
-                    )
-                    : willDeleteToastIndex;
+            final willDeleteToastIndex = toastProvider.willDeleteToastIndex;
             final hovered = isHovered() || paused();
             final gap = toastTheme.gap;
 
@@ -607,7 +595,7 @@ class ToastViewer extends StatelessWidget {
             var visualIndex = 0;
             for (var i = toasts.length - 1; i >= 0; i--) {
               visualIndexes[i] = visualIndex;
-              if (!deletedIndexes.contains(masterIndexes[i])) {
+              if (!willDeleteToastIndex.contains(masterIndexes[i])) {
                 expandedOffsets.add(
                   expandedOffsets.last + toasts[i].height + gap,
                 );
@@ -636,7 +624,7 @@ class ToastViewer extends StatelessWidget {
                               hovered ? 1.0 : 1.0 - 0.03 * positionedIndex;
                           final baseOpacity =
                               positionedIndex >= visibleCount ? 0.0 : 1.0;
-                          final isMarkDeleted = deletedIndexes.contains(
+                          final isMarkDeleted = willDeleteToastIndex.contains(
                             masterIndex,
                           );
 
@@ -654,18 +642,12 @@ class ToastViewer extends StatelessWidget {
                           final manualDragPosition = signal(context, 0.0);
 
                           void endDrag() {
-                            toastProvider.onDragToastIndex.set(
-                              {...toastProvider.onDragToastIndex()}
-                                ..remove(masterIndex),
-                            );
+                            toastProvider.onDragToastIndex.remove(masterIndex);
                           }
 
                           void onDragStart(DragStartDetails details) {
                             manualDragPosition.set(0.0);
-                            toastProvider.onDragToastIndex.set({
-                              ...toastProvider.onDragToastIndex(),
-                              masterIndex,
-                            });
+                            toastProvider.onDragToastIndex.add(masterIndex);
                           }
 
                           void onDragCancel() {
@@ -711,7 +693,7 @@ class ToastViewer extends StatelessWidget {
                                   ? 0.0
                                   : 1.0;
                           final isDragging = toastProvider
-                              .onDragToastIndex()
+                              .onDragToastIndex
                               .contains(masterIndex);
                           final dragMotion =
                               isDragging

@@ -440,7 +440,7 @@ void main() {
       // Wait for auto-delete delay + 250ms animation time
       await tester.pump(const Duration(milliseconds: 350));
 
-      expect(provider?.willDeleteToastIndex().contains(1), isTrue);
+      expect(provider?.willDeleteToastIndex.contains(1), isTrue);
 
       // Error should be auto-deleted
       // expect(find.text('Error 1'), findsNothing);
