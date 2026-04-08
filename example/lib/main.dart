@@ -565,11 +565,13 @@ class MyApp extends StatelessWidget {
                   ),
                 ),
                 // Card viewer: shows only error toasts at top-left
-                const SafeArea(
-                  child: ToastViewer(
-                    alignment: Alignment.topLeft,
-                    delay: Duration(seconds: 5),
-                    categories: [ToastCategory('card')],
+                Positioned.fill(
+                  child: const SafeArea(
+                    child: ToastViewer(
+                      alignment: Alignment.topLeft,
+                      delay: Duration(seconds: 5),
+                      categories: [ToastCategory('card')],
+                    ),
                   ),
                 ),
               ],

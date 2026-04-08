@@ -41,8 +41,8 @@ void main() {
     });
 
     test('should implement toString correctly', () {
-      expect(ToastCategory.general.toString(), 'ToastCategory(general)');
-      expect(ToastCategory.success.toString(), 'ToastCategory(success)');
+      expect(ToastCategory.general.toString(), 'general');
+      expect(ToastCategory.success.toString(), 'success');
     });
   });
 
@@ -448,6 +448,185 @@ void main() {
       // General toasts should still exist in provider but not visible in this viewer
       // We can't easily verify they still exist without another viewer, but the test
       // confirms the error toast was auto-deleted correctly
+    });
+  });
+
+  group('ToastViewer center alignment', () {
+    /// Default [ToastTheme.kDefault] uses 12 logical px padding on all sides.
+    const padding = 12.0;
+
+    testWidgets('topCenter places toast bar centered in padded viewport', (
+      tester,
+    ) async {
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      const surfaceWidth = 800.0;
+      await tester.binding.setSurfaceSize(const Size(surfaceWidth, 600));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ToastProvider.create(
+            child: Builder(
+              builder: (context) {
+                return Scaffold(
+                  body: Stack(
+                    children: [
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Toast(
+                              height: 48,
+                              builder: (toast) => Container(
+                                key: const Key('center-toast-surface'),
+                                width: double.infinity,
+                                height: 48,
+                                color: Colors.blue,
+                              ),
+                            ).show(context);
+                          },
+                          child: const Text('Show top center toast'),
+                        ),
+                      ),
+                      const ToastViewer(
+                        alignment: Alignment.topCenter,
+                        // Wider than [thresholdFullWidth] so bar width uses [width].
+                        width: 400,
+                        thresholdFullWidth: 600,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Show top center toast'));
+      await tester.pumpAndSettle();
+
+      final rect = tester.getRect(
+        find.byKey(const Key('center-toast-surface')),
+      );
+      final stackInnerWidth = surfaceWidth - 2 * padding;
+      const toastBarWidth = 400.0 - 2 * padding;
+      final expectedLeft = padding + (stackInnerWidth - toastBarWidth) / 2;
+
+      expect(rect.width, closeTo(toastBarWidth, 1.0));
+      expect(rect.left, closeTo(expectedLeft, 1.5));
+      expect(rect.center.dx, closeTo(surfaceWidth / 2, 1.5));
+    });
+
+    testWidgets('bottomCenter places toast bar centered in padded viewport', (
+      tester,
+    ) async {
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      const surfaceWidth = 800.0;
+      await tester.binding.setSurfaceSize(const Size(surfaceWidth, 600));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ToastProvider.create(
+            child: Builder(
+              builder: (context) {
+                return Scaffold(
+                  body: Stack(
+                    children: [
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Toast(
+                              height: 48,
+                              builder: (toast) => Container(
+                                key: const Key('center-toast-surface'),
+                                width: double.infinity,
+                                height: 48,
+                                color: Colors.green,
+                              ),
+                            ).show(context);
+                          },
+                          child: const Text('Show bottom center toast'),
+                        ),
+                      ),
+                      const ToastViewer(
+                        alignment: Alignment.bottomCenter,
+                        width: 400,
+                        thresholdFullWidth: 600,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Show bottom center toast'));
+      await tester.pumpAndSettle();
+
+      final rect = tester.getRect(
+        find.byKey(const Key('center-toast-surface')),
+      );
+      final stackInnerWidth = surfaceWidth - 2 * padding;
+      const toastBarWidth = 400.0 - 2 * padding;
+      final expectedLeft = padding + (stackInnerWidth - toastBarWidth) / 2;
+
+      expect(rect.width, closeTo(toastBarWidth, 1.0));
+      expect(rect.left, closeTo(expectedLeft, 1.5));
+      expect(rect.center.dx, closeTo(surfaceWidth / 2, 1.5));
+    });
+
+    testWidgets('topCenter on narrow surface fills width (left at padding)', (
+      tester,
+    ) async {
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      const surfaceWidth = 400.0;
+      await tester.binding.setSurfaceSize(const Size(surfaceWidth, 600));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ToastProvider.create(
+            child: Builder(
+              builder: (context) {
+                return Scaffold(
+                  body: Stack(
+                    children: [
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Toast(
+                              height: 48,
+                              builder: (toast) => Container(
+                                key: const Key('narrow-toast-surface'),
+                                width: double.infinity,
+                                height: 48,
+                                color: Colors.orange,
+                              ),
+                            ).show(context);
+                          },
+                          child: const Text('Show narrow toast'),
+                        ),
+                      ),
+                      const ToastViewer(alignment: Alignment.topCenter),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Show narrow toast'));
+      await tester.pumpAndSettle();
+
+      final rect = tester.getRect(
+        find.byKey(const Key('narrow-toast-surface')),
+      );
+      final stackInnerWidth = surfaceWidth - 2 * padding;
+      expect(rect.width, closeTo(stackInnerWidth, 1.0));
+      expect(rect.left, closeTo(padding, 1.5));
+      expect(rect.center.dx, closeTo(surfaceWidth / 2, 1.5));
     });
   });
 }

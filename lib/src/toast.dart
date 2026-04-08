@@ -20,12 +20,7 @@ part 'utils.dart';
 ///   builder: (toast) => ErrorToast(...),
 /// ).show(context);
 /// ```
-class ToastCategory {
-  /// Creates a custom toast category.
-  ///
-  /// [name] is the identifier for this category.
-  const ToastCategory(this.name);
-
+extension type const ToastCategory(String name) {
   /// General purpose toasts. This is the default category.
   static const general = ToastCategory('general');
 
@@ -37,22 +32,6 @@ class ToastCategory {
 
   /// Error notification toasts.
   static const error = ToastCategory('error');
-
-  /// The identifier for this category.
-  final String name;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ToastCategory &&
-          runtimeType == other.runtimeType &&
-          name == other.name;
-
-  @override
-  int get hashCode => name.hashCode;
-
-  @override
-  String toString() => 'ToastCategory($name)';
 }
 
 /// A toast instance that can be shown or hidden.
@@ -541,11 +520,12 @@ class ToastViewer extends StatelessWidget {
 
     final toastTheme =
         Theme.of(context).extension<ToastTheme>() ?? ToastTheme.kDefault;
-    final (isTop, isBottom, isLeft, isRight) = (
+    final (isTop, isBottom, isLeft, isRight, isCenterX) = (
       alignment.y < 0,
       alignment.y > 0,
       alignment.x < 0,
       alignment.x > 0,
+      alignment.x == 0,
     );
 
     return LayoutBuilder(
@@ -556,6 +536,8 @@ class ToastViewer extends StatelessWidget {
                 ? size.width
                 : (this.width ?? 400);
         final toastWidth = width - toastTheme.viewerPadding.horizontal;
+        final stackInnerWidth =
+            size.width - toastTheme.viewerPadding.horizontal;
 
         return SignalBuilder(
           builder: (context) {
@@ -679,7 +661,11 @@ class ToastViewer extends StatelessWidget {
                             return Positioned(
                               top: isTop ? transform.dy : null,
                               bottom: isBottom ? transform.dy : null,
-                              left: isLeft ? transform.dx : null,
+                              left:
+                                  isCenterX
+                                      ? (stackInnerWidth - toastWidth) / 2 +
+                                          transform.dx
+                                      : (isLeft ? transform.dx : null),
                               right: isRight ? transform.dx : null,
                               width: toastWidth,
                               child: IgnorePointer(
