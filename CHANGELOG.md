@@ -1,3 +1,7 @@
+## 0.2.2
+- Fix `ToastViewer` horizontal positioning for `Alignment.topCenter` and `Alignment.bottomCenter`: the toast bar is centered within the padded viewport (including when the bar is narrower than the viewport on wide layouts).
+- Add widget tests covering center alignment for wide and narrow surfaces.
+
 ## 0.2.1
 - Update `oref` to `^2.8.0` with correct and best practices of `oref`. Thanks @medz
 
