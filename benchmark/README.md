@@ -24,6 +24,15 @@ ZENTOAST_BENCHMARK_OUTPUT=../benchmark/results/before.json flutter drive \
 Run again after applying the optimization, replacing `before` with `after` in
 both places. Then run `python3 benchmark/compare.py` from the repository root.
 Use a separate checkout for each library revision, with the same harness files.
+For the motion-config comparison, use the saved optimized and new-config results:
+
+```sh
+python3 benchmark/compare.py \
+  --before benchmark/results/before-motion-config.json \
+  --after benchmark/results/after-motion-config-repeat.json \
+  --output benchmark/results/comparison-motion-config-repeat.json
+```
+
 The report uses the median of three per-run means, rather than pooling frames
 from runs that contain different numbers of frames. Per-frame durations,
 percentiles and sample counts are preserved in the JSON files.

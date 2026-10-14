@@ -12,6 +12,10 @@ export 'src/toast.dart'
         Toast,
         ToastCategory,
         ToastProvider,
+        ToastMotionConfig,
+        ToastMotionTransition,
+        ToastDragReturnMotion,
+        ToastMotionPolicy,
         ToastTheme,
         ToastThemeProvider,
         ToastViewer;

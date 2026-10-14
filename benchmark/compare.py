@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """Compare the median of three warmed profile runs per toast configuration."""
 import json
+import argparse
 from pathlib import Path
 from statistics import median
 
 ROOT = Path(__file__).resolve().parent
-before = json.loads((ROOT / 'results/before.json').read_text())
-after = json.loads((ROOT / 'results/after.json').read_text())
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--before', type=Path, default=ROOT / 'results/before.json')
+parser.add_argument('--after', type=Path, default=ROOT / 'results/after.json')
+parser.add_argument('--output', type=Path, default=ROOT / 'results/comparison.json')
+args = parser.parse_args()
+before = json.loads(args.before.read_text())
+after = json.loads(args.after.read_text())
 
 
 def summarize(result):
@@ -48,5 +54,5 @@ for key in b:
         f"{old['builder_calls']:.0f} → {new['builder_calls']:.0f} |"
     )
     comparison.append({'toasts_per_viewer': key[0], 'viewers': key[1], 'before': old, 'after': new})
-(ROOT / 'results/comparison.json').write_text(json.dumps(comparison, indent=2) + '\n')
+args.output.write_text(json.dumps(comparison, indent=2) + '\n')
 print('\n'.join(lines))

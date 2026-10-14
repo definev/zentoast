@@ -83,6 +83,58 @@ class MyApp extends StatelessWidget {
 }
 ```
 
+### Motion configuration
+
+Motion is grouped by purpose: `enter`, `exit`, `reposition` (stack changes and
+expand/collapse), and `dragReturn`. Position, scale and opacity use independent
+motions; drag return exposes position and opacity. Direct dragging always follows
+the finger.
+
+Set app defaults with `ToastTheme.motion`, or override the entire configuration
+for one `ToastViewer`. Use `copyWith` to override only a phase or property:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:motor/motor.dart';
+import 'package:zentoast/zentoast.dart';
+
+final motion = const ToastMotionConfig().copyWith(
+  exit: const ToastMotionTransition(
+    position: Motion.curved(Duration(milliseconds: 300), Curves.easeOut),
+    scale: Motion.curved(Duration(milliseconds: 300), Curves.easeOut),
+    opacity: Motion.linear(Duration(milliseconds: 200)),
+  ),
+);
+
+ToastThemeProvider(
+  data: ToastTheme(
+    viewerPadding: const EdgeInsets.all(12),
+    gap: 8,
+    motion: motion,
+  ),
+  child: const ToastViewer(delay: null),
+);
+
+// Viewer-specific policy, overriding its theme:
+const ToastViewer(
+  motion: ToastMotionConfig(policy: ToastMotionPolicy.reduced),
+);
+```
+
+The default `system` policy follows `MediaQuery.disableAnimations`. Without a
+`MediaQuery`, it uses full motion. `full` always uses configured motion, `reduced`
+snaps automatic position/scale changes and fades over 150 ms with `Curves.easeOut`,
+and `none` applies every target immediately. Reduced motion keeps direct dragging
+but snaps back on return. Policy changes also apply to animations already running.
+
+Full-motion defaults retain the 300 ms entrance hold and original snappy springs
+with a 500 ms perceptual duration. Spring settling can take longer. Dismissed toasts
+are removed only after every matching mounted viewer's exit controllers finish;
+a missing or unmounted viewer does not prevent cleanup. Custom motions must reach
+their target and finish: Motor's `Motion.none` holds its starting value, so use
+`ToastMotionPolicy.none` to disable animation. Theme motion configurations switch
+discretely halfway through theme interpolation; spacing still interpolates.
+
 ### Triggering a Toast
 
 ```dart
