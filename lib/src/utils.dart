@@ -1148,3 +1148,77 @@ extension MotionModifier on Widget {
     );
   }
 }
+
+// Independent Motor controllers share one build callback. Each property keeps
+// its own motion and velocity when retargeted; only the widget rebuild is shared.
+class _ToastMotionBuilder extends StatefulWidget {
+  const _ToastMotionBuilder({
+    required this.arguments,
+    required this.builder,
+    required this.child,
+  });
+
+  final List<MotionArgument<double>> arguments;
+  final ValueWidgetBuilder<List<double>> builder;
+  final Widget child;
+
+  @override
+  State<_ToastMotionBuilder> createState() => _ToastMotionBuilderState();
+}
+
+class _ToastMotionBuilderState extends State<_ToastMotionBuilder>
+    with TickerProviderStateMixin {
+  late final List<MotionController<double>> _controllers;
+  late final Listenable _listenable;
+
+  @override
+  void initState() {
+    super.initState();
+    _controllers = [
+      for (final argument in widget.arguments)
+        MotionController<double>(
+          motion: argument.motion,
+          vsync: this,
+          initialValue: argument.value,
+          converter: argument.converter,
+        ),
+    ];
+    _listenable = Listenable.merge(_controllers);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ToastMotionBuilder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    assert(widget.arguments.length == _controllers.length);
+    for (var i = 0; i < _controllers.length; i++) {
+      final previous = oldWidget.arguments[i];
+      final next = widget.arguments[i];
+      final controller = _controllers[i];
+      // Match Motor's BaseMotionBuilder update order, including preserving
+      // velocity when the motion or the target changes during an animation.
+      if (previous.converter != next.converter) {
+        controller.converter = next.converter;
+      }
+      if (previous.motion != next.motion) controller.motion = next.motion;
+      if (previous.value != next.value) controller.animateTo(next.value);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: _listenable,
+    child: widget.child,
+    builder:
+        (context, child) => widget.builder(context, [
+          for (final controller in _controllers) controller.value,
+        ], child),
+  );
+
+  @override
+  void dispose() {
+    for (final controller in _controllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+}

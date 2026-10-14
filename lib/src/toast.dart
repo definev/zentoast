@@ -627,8 +627,6 @@ class ToastViewer extends StatelessWidget {
                                   ? 0.0
                                   : baseOpacity;
 
-                          final dragPosition = manualDragPosition();
-
                           final appearOffsetMotion =
                               isFirstAppear
                                   ? const CurvedMotion(
@@ -651,111 +649,128 @@ class ToastViewer extends StatelessWidget {
                                   ? const Motion.linear(Durations.medium1)
                                   : const Motion.snappySpring();
 
-                          return ((
-                            Offset transform,
-                            double scale,
-                            double opacity,
-                          ) {
-                            final clampedOpacity =
-                                opacity.clamp(0, 1).toDouble();
-                            return Positioned(
-                              top: isTop ? transform.dy : null,
-                              bottom: isBottom ? transform.dy : null,
-                              left:
-                                  isCenterX
-                                      ? (stackInnerWidth - toastWidth) / 2 +
-                                          transform.dx
-                                      : (isLeft ? transform.dx : null),
-                              right: isRight ? transform.dx : null,
-                              width: toastWidth,
-                              child: IgnorePointer(
-                                ignoring: clampedOpacity == 0,
-                                child: RepaintBoundary(
-                                  key: ValueKey(toast.id),
-                                  child: Transform.scale(
-                                    scale: scale,
-                                    child: Opacity(
-                                      opacity: clampedOpacity,
-                                      child: MouseRegion(
-                                        onEnter: (_) => setHoverDebounced(true),
-                                        onExit: (_) => setHoverDebounced(false),
-                                        child: ((
-                                          double userDragPosition,
-                                          double opacity,
-                                        ) {
-                                          return Transform.translate(
-                                            offset: Offset(0, userDragPosition),
-                                            child: Opacity(
-                                              opacity:
-                                                  opacity
-                                                      .clamp(0, 1)
-                                                      .toDouble(),
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  if (!isHovered()) {
-                                                    paused.set(!paused());
-                                                  }
-                                                },
-                                                onVerticalDragStart: (_) {
-                                                  manualDragPosition.set(0.0);
-                                                  toastProvider.onDragToastIndex
-                                                      .add(masterIndex);
-                                                },
-                                                onVerticalDragUpdate:
-                                                    (details) =>
-                                                        manualDragPosition.set(
-                                                          manualDragPosition() +
-                                                              details.delta.dy,
-                                                        ),
-                                                onVerticalDragCancel:
-                                                    () => endDrag(reset: true),
-                                                onVerticalDragEnd:
-                                                    (details) => endDrag(
-                                                      details: details,
-                                                    ),
-                                                child: SizedBox(
-                                                  height: toast.height + gap,
-                                                  child: ColoredBox(
-                                                    color: Colors.transparent,
-                                                    child: Align(
-                                                      alignment: alignment,
-                                                      child: toast.builder(
-                                                        toast,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        }).motion(
-                                          MotionArgument.single(
-                                            dragPosition,
-                                            toastProvider.onDragToastIndex
-                                                    .contains(masterIndex)
-                                                ? MotionPresets.instant
-                                                : const Motion.snappySpring(),
+                          // Keep content outside the animation callbacks. Its inherited
+                          // and reactive dependencies still rebuild normally.
+                          final content = GestureDetector(
+                            onTap: () {
+                              if (!isHovered()) paused.set(!paused());
+                            },
+                            onVerticalDragStart: (_) {
+                              manualDragPosition.set(0.0);
+                              toastProvider.onDragToastIndex.add(masterIndex);
+                            },
+                            onVerticalDragUpdate:
+                                (details) => manualDragPosition.set(
+                                  manualDragPosition() + details.delta.dy,
+                                ),
+                            onVerticalDragCancel: () => endDrag(reset: true),
+                            onVerticalDragEnd:
+                                (details) => endDrag(details: details),
+                            child: SizedBox(
+                              height: toast.height + gap,
+                              child: ColoredBox(
+                                color: Colors.transparent,
+                                child: Align(
+                                  alignment: alignment,
+                                  child: toast.builder(toast),
+                                ),
+                              ),
+                            ),
+                          );
+                          final drag = SignalBuilder(
+                            builder: (context) {
+                              final dragPosition = manualDragPosition();
+                              return _ToastMotionBuilder(
+                                arguments: [
+                                  MotionArgument.single(
+                                    dragPosition,
+                                    toastProvider.onDragToastIndex.contains(
+                                          masterIndex,
+                                        )
+                                        ? MotionPresets.instant
+                                        : const Motion.snappySpring(),
+                                  ),
+                                  MotionArgument.single(
+                                    dragPosition * alignment.y.sign > 20
+                                        ? 0.0
+                                        : 1.0,
+                                    const Motion.snappySpring(),
+                                  ),
+                                ],
+                                builder:
+                                    (context, values, child) =>
+                                        Transform.translate(
+                                          offset: Offset(0, values[0]),
+                                          child: Opacity(
+                                            opacity:
+                                                values[1]
+                                                    .clamp(0, 1)
+                                                    .toDouble(),
+                                            child: child,
                                           ),
-                                          MotionArgument.single(
-                                            dragPosition * alignment.y.sign > 20
-                                                ? 0.0
-                                                : 1.0,
-                                            const Motion.snappySpring(),
-                                          ),
+                                        ),
+                                child: content,
+                              );
+                            },
+                          );
+                          final interactiveChild = MouseRegion(
+                            onEnter: (_) => setHoverDebounced(true),
+                            onExit: (_) => setHoverDebounced(false),
+                            child: drag,
+                          );
+
+                          // Anchor once. Translation changes paint rather than
+                          // requesting Stack layout on every animation tick.
+                          return Positioned(
+                            top: isTop ? 0 : null,
+                            bottom: isBottom ? 0 : null,
+                            left:
+                                isCenterX
+                                    ? (stackInnerWidth - toastWidth) / 2
+                                    : (isLeft ? 0 : null),
+                            right: isRight ? 0 : null,
+                            width: toastWidth,
+                            child: _ToastMotionBuilder(
+                              arguments: [
+                                MotionArgument.single(
+                                  transformY,
+                                  appearOffsetMotion,
+                                ),
+                                MotionArgument.single(scale, appearScaleMotion),
+                                MotionArgument.single(
+                                  opacity,
+                                  appearOpacityMotion,
+                                ),
+                              ],
+                              builder: (context, values, child) {
+                                final transformY = values[0];
+                                final scale = values[1];
+                                final clampedOpacity =
+                                    values[2].clamp(0, 1).toDouble();
+                                return Transform.translate(
+                                  offset: Offset(
+                                    0,
+                                    isTop
+                                        ? transformY
+                                        : (isBottom ? -transformY : 0),
+                                  ),
+                                  child: IgnorePointer(
+                                    ignoring: clampedOpacity == 0,
+                                    child: RepaintBoundary(
+                                      key: ValueKey(toast.id),
+                                      child: Transform.scale(
+                                        scale: scale,
+                                        child: Opacity(
+                                          opacity: clampedOpacity,
+                                          child: child,
                                         ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ),
-                            );
-                          }).motion(
-                            MotionArgument.offset(
-                              Offset(0.0, transformY),
-                              appearOffsetMotion,
+                                );
+                              },
+                              child: interactiveChild,
                             ),
-                            MotionArgument.single(scale, appearScaleMotion),
-                            MotionArgument.single(opacity, appearOpacityMotion),
                           );
                         },
                       ),
