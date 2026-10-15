@@ -42,6 +42,8 @@ dependencies:
   oref: ^2.5.1
 
 dev_dependencies:
+  integration_test:
+    sdk: flutter
   flutter_test:
     sdk: flutter
 

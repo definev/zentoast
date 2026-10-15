@@ -475,12 +475,13 @@ void main() {
                           onPressed: () {
                             Toast(
                               height: 48,
-                              builder: (toast) => Container(
-                                key: const Key('center-toast-surface'),
-                                width: double.infinity,
-                                height: 48,
-                                color: Colors.blue,
-                              ),
+                              builder:
+                                  (toast) => Container(
+                                    key: const Key('center-toast-surface'),
+                                    width: double.infinity,
+                                    height: 48,
+                                    color: Colors.blue,
+                                  ),
                             ).show(context);
                           },
                           child: const Text('Show top center toast'),
@@ -536,12 +537,13 @@ void main() {
                           onPressed: () {
                             Toast(
                               height: 48,
-                              builder: (toast) => Container(
-                                key: const Key('center-toast-surface'),
-                                width: double.infinity,
-                                height: 48,
-                                color: Colors.green,
-                              ),
+                              builder:
+                                  (toast) => Container(
+                                    key: const Key('center-toast-surface'),
+                                    width: double.infinity,
+                                    height: 48,
+                                    color: Colors.green,
+                                  ),
                             ).show(context);
                           },
                           child: const Text('Show bottom center toast'),
@@ -596,12 +598,13 @@ void main() {
                           onPressed: () {
                             Toast(
                               height: 48,
-                              builder: (toast) => Container(
-                                key: const Key('narrow-toast-surface'),
-                                width: double.infinity,
-                                height: 48,
-                                color: Colors.orange,
-                              ),
+                              builder:
+                                  (toast) => Container(
+                                    key: const Key('narrow-toast-surface'),
+                                    width: double.infinity,
+                                    height: 48,
+                                    color: Colors.orange,
+                                  ),
                             ).show(context);
                           },
                           child: const Text('Show narrow toast'),

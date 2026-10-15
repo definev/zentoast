@@ -1,3 +1,9 @@
+## Unreleased
+- Add immutable `ToastMotionConfig` with enter, exit, reposition and drag-return groups, theme defaults and per-viewer overrides.
+- Add system, full, reduced and no-motion policies; system accessibility changes apply to running animations.
+- Remove dismissed toasts after actual exit completion across matching viewers, replacing fixed cleanup timing; reindex deletion and drag state by toast identity.
+- Preserve full-motion animation visuals and content caching.
+
 ## 0.2.2
 - Fix `ToastViewer` horizontal positioning for `Alignment.topCenter` and `Alignment.bottomCenter`: the toast bar is centered within the padded viewport (including when the bar is narrower than the viewport on wide layouts).
 - Add widget tests covering center alignment for wide and narrow surfaces.
