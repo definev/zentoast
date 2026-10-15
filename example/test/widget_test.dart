@@ -1,30 +1,29 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:example/main.dart';
+import 'package:material_ui/material_ui.dart' show Icons;
+import 'package:zentoast/zentoast.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('example shows and dismisses a custom toast', (tester) async {
+    await tester.pumpWidget(ToastProvider.create(child: const MyApp()));
+    expect(find.text('Sonner'), findsOneWidget);
+    expect(find.text('Your changes have been saved.'), findsNothing);
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.text('Success').first);
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+    expect(find.byType(SonnerToast), findsOneWidget);
+    expect(find.text('Your changes have been saved.'), findsOneWidget);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    final context = tester.element(find.byType(SonnerToast));
+    final provider = ToastProvider.of(context);
+    await tester.tap(find.byIcon(Icons.close_rounded));
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(find.byType(SonnerToast), findsNothing);
+    expect(provider.data, isEmpty);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }

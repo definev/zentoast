@@ -23,11 +23,13 @@ You design the UI — **zentoast** takes care of animation, physics, queuing, ge
 
 ## Installation
 
+Requires Dart 3.13 or newer (below 4.0) and Flutter 3.47 or newer.
+
 Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  zentoast: ^latest_version
+  zentoast: ^1.0.0
 ```
 
 Import:
@@ -94,7 +96,7 @@ Set app defaults with `ToastTheme.motion`, or override the entire configuration
 for one `ToastViewer`. Use `copyWith` to override only a phase or property:
 
 ```dart
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:motor/motor.dart';
 import 'package:zentoast/zentoast.dart';
 
@@ -373,6 +375,22 @@ while billing alerts stay anchored at the bottom-left with a custom delay.
 ---
 
 ## Theming
+
+Zentoast's own code uses Flutter widgets without importing Material. Motor 1.1.0
+still imports `flutter/material.dart` through its public exports, so removing
+Material from the entire import graph also requires an upstream Motor change
+or replacing that dependency. Wrap your app or a subtree in `ToastThemeProvider`,
+then read the nearest configuration with
+`ToastThemeProvider.of(context)`. Without a provider, viewers use
+`ToastTheme.kDefault`.
+
+`ToastTheme` is no longer a `ThemeExtension`; move toast configuration from
+`ThemeData.extensions` into `ToastThemeProvider`. The styled UI examples use
+Material components supplied by the consuming app; see `example/` for an app
+using `package:material_ui/material_ui.dart`.
+
+`ToastThemeProvider.data` is now non-nullable. Omit it or pass
+`ToastTheme.kDefault` to use the defaults.
 
 ```dart
 ToastThemeProvider(

@@ -43,8 +43,13 @@ The checked-in measurements use a physical Pixel 7a, Android 17, display mode
 constant. The original library revision is
 `6deb04f71961c540b3334988cf8e348e017b2585`; see `RESULTS.md` for the results.
 
-Golden frames were captured from the original library using the same stable SDK
-before modifying its animation. `flutter test` checks 83 frames at nine
+Golden frames were originally captured from the original library using the same
+stable SDK before modifying its animation. The Material-free fixture and golden
+baselines now use Flutter 3.50.0-0.1.pre (`6acaa6e3ba`), Dart 3.15.0-18.0.dev,
+Motor 1.1.0 and oref 2.10.0. Before refreshing the baselines, all 38 frames that
+differed from the old SDK were verified byte-for-byte against the original
+library and Material fixture running on the new SDK. The historical performance
+measurements above are unchanged. `flutter test` checks 83 frames at nine
 alignments plus responsive, multi-viewer and hover scenarios. Another test
 asserts content builders are not called by animation ticks or drag updates.
 Eight frames exercise interruption and retargeting while a spring is running.

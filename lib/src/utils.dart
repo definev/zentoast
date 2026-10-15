@@ -145,10 +145,9 @@ class _ToastMotionBuilderState extends State<_ToastMotionBuilder>
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: _listenable,
     child: widget.child,
-    builder:
-        (context, child) => widget.builder(context, [
-          for (final controller in _controllers) controller.value,
-        ], child),
+    builder: (context, child) => widget.builder(context, [
+      for (final controller in _controllers) controller.value,
+    ], child),
   );
 
   @override

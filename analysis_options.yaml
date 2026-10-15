@@ -3,6 +3,6 @@ include: package:flutter_lints/flutter.yaml
 plugins:
   oref: ^2.8.0
 
-lints:
-  rules:
-    # implicit_call_tearoffs: false
+analyzer:
+  exclude:
+    - build/**

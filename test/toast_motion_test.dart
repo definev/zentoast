@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motor/motor.dart';
 import 'package:zentoast/zentoast.dart';
@@ -22,14 +22,14 @@ class Harness {
   int builds = 0;
 
   Widget get widget => ToastProvider.create(
-    child: MaterialApp(
-      home: Builder(
+    child: WidgetsApp(
+      color: const Color(0x00000000),
+      builder: (context, child) => Builder(
         builder: (context) {
           provider = ToastProvider.of(context);
           return MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(disableAnimations: disableAnimations),
+            data: MediaQuery.of(context)
+                .copyWith(disableAnimations: disableAnimations),
             child: ToastThemeProvider(
               data: ToastTheme(
                 viewerPadding: const EdgeInsets.all(12),
@@ -68,7 +68,7 @@ class Harness {
         builds++;
         return SizedBox(
           height: 64,
-          child: ColoredBox(color: Colors.blue, child: Text(label)),
+          child: ColoredBox(color: const Color(0xFF0000FF), child: Text(label)),
         );
       },
     );
@@ -83,17 +83,15 @@ Future<void> enter(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-Finder gestureFor(String label) =>
-    find
-        .ancestor(of: find.text(label), matching: find.byType(GestureDetector))
-        .first;
-double opacityFor(WidgetTester tester, String label) =>
-    tester
-        .widgetList<Opacity>(
-          find.ancestor(of: find.text(label), matching: find.byType(Opacity)),
-        )
-        .last
-        .opacity;
+Finder gestureFor(String label) => find
+    .ancestor(of: find.text(label), matching: find.byType(GestureDetector))
+    .first;
+double opacityFor(WidgetTester tester, String label) => tester
+    .widgetList<Opacity>(
+      find.ancestor(of: find.text(label), matching: find.byType(Opacity)),
+    )
+    .last
+    .opacity;
 
 void main() {
   test(
@@ -112,23 +110,22 @@ void main() {
         motion.dragReturn.position,
       );
       const a = ToastTheme(viewerPadding: EdgeInsets.all(12), gap: 8);
-      final b = a.copyWith(gap: 16, motion: motion) as ToastTheme;
-      expect((a.lerp(b, 0.25) as ToastTheme).motion, same(a.motion));
-      expect((a.lerp(b, 0.75) as ToastTheme).motion, same(motion));
-      expect((a.lerp(b, 0.5) as ToastTheme).gap, 12);
+      final b = a.copyWith(gap: 16, motion: motion);
+      expect(a.lerp(b, 0.25).motion, same(a.motion));
+      expect(a.lerp(b, 0.75).motion, same(motion));
+      expect(a.lerp(b, 0.5).gap, 12);
     },
   );
 
   testWidgets(
     'viewer motion overrides theme and enter remains selected while moving',
     (tester) async {
-      final h =
-          Harness()
-            ..theme = const ToastMotionConfig(policy: ToastMotionPolicy.none)
-            ..motion = ToastMotionConfig(
-              enter: _transition(1000),
-              reposition: _transition(10),
-            );
+      final h = Harness()
+        ..theme = const ToastMotionConfig(policy: ToastMotionPolicy.none)
+        ..motion = ToastMotionConfig(
+          enter: _transition(1000),
+          reposition: _transition(10),
+        );
       await tester.pumpWidget(h.widget);
       h.show('a');
       await tester.pump();
@@ -176,10 +173,9 @@ void main() {
   testWidgets('all viewers complete exit and unmount releases a participant', (
     tester,
   ) async {
-    final h =
-        Harness()
-          ..motion = ToastMotionConfig(exit: _transition(100))
-          ..secondMotion = ToastMotionConfig(exit: _transition(1000));
+    final h = Harness()
+      ..motion = ToastMotionConfig(exit: _transition(100))
+      ..secondMotion = ToastMotionConfig(exit: _transition(1000));
     await tester.pumpWidget(h.widget);
     final toast = h.show('shared');
     await enter(tester);
@@ -221,9 +217,8 @@ void main() {
   testWidgets('none applies targets immediately and exits without a timer', (
     tester,
   ) async {
-    final h =
-        Harness()
-          ..motion = const ToastMotionConfig(policy: ToastMotionPolicy.none);
+    final h = Harness()
+      ..motion = const ToastMotionConfig(policy: ToastMotionPolicy.none);
     await tester.pumpWidget(h.widget);
     final toast = h.show('instant');
     await tester.pump();
@@ -269,15 +264,14 @@ void main() {
   testWidgets(
     'reposition and drag return select independent configured motions',
     (tester) async {
-      final h =
-          Harness()
-            ..motion = ToastMotionConfig(
-              reposition: _transition(1000),
-              dragReturn: const ToastDragReturnMotion(
-                position: Motion.linear(Duration(milliseconds: 1000)),
-                opacity: _instant,
-              ),
-            );
+      final h = Harness()
+        ..motion = ToastMotionConfig(
+          reposition: _transition(1000),
+          dragReturn: const ToastDragReturnMotion(
+            position: Motion.linear(Duration(milliseconds: 1000)),
+            opacity: _instant,
+          ),
+        );
       await tester.pumpWidget(h.widget);
       h.show('a');
       h.show('b');
@@ -310,16 +304,15 @@ void main() {
   testWidgets('shared toast waits for slowest viewer and opacity controller', (
     tester,
   ) async {
-    final h =
-        Harness()
-          ..motion = ToastMotionConfig(exit: _transition(100))
-          ..secondMotion = const ToastMotionConfig(
-            exit: ToastMotionTransition(
-              position: Motion.linear(Duration(milliseconds: 100)),
-              scale: Motion.linear(Duration(milliseconds: 100)),
-              opacity: Motion.linear(Duration(milliseconds: 1000)),
-            ),
-          );
+    final h = Harness()
+      ..motion = ToastMotionConfig(exit: _transition(100))
+      ..secondMotion = const ToastMotionConfig(
+        exit: ToastMotionTransition(
+          position: Motion.linear(Duration(milliseconds: 100)),
+          scale: Motion.linear(Duration(milliseconds: 100)),
+          opacity: Motion.linear(Duration(milliseconds: 1000)),
+        ),
+      );
     await tester.pumpWidget(h.widget);
     final toast = h.show('shared');
     await enter(tester);
@@ -338,9 +331,8 @@ void main() {
   testWidgets(
     'same-frame show and hide registers newly mounted presentations',
     (tester) async {
-      final h =
-          Harness()
-            ..motion = const ToastMotionConfig(policy: ToastMotionPolicy.none);
+      final h = Harness()
+        ..motion = const ToastMotionConfig(policy: ToastMotionPolicy.none);
       await tester.pumpWidget(h.widget);
       final toast = h.show('early');
       h.provider.hide(toast);
@@ -377,10 +369,9 @@ void main() {
   testWidgets('real bottom drag remains direct and reduced return snaps', (
     tester,
   ) async {
-    final h =
-        Harness()
-          ..alignment = Alignment.bottomLeft
-          ..motion = const ToastMotionConfig(policy: ToastMotionPolicy.reduced);
+    final h = Harness()
+      ..alignment = Alignment.bottomLeft
+      ..motion = const ToastMotionConfig(policy: ToastMotionPolicy.reduced);
     await tester.pumpWidget(h.widget);
     h.show('drag');
     await tester.pump();

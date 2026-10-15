@@ -1,4 +1,8 @@
-## Unreleased
+## 1.0.0
+- First stable release.
+- Remove direct Material imports from the library and tests. `ToastTheme` is now standalone and `ToastThemeProvider` is an inherited widget; use `ToastThemeProvider.of(context)` instead of `ThemeData.extensions`. Motor 1.1.0 still imports Material transitively.
+- Make `ToastThemeProvider.data` non-nullable; omit it or pass `ToastTheme.kDefault` for defaults.
+- Require Dart 3.13 and Flutter 3.47 to match oref 2.10.0; migrate the example's Material UI to `material_ui`.
 - Add immutable `ToastMotionConfig` with enter, exit, reposition and drag-return groups, theme defaults and per-viewer overrides.
 - Add system, full, reduced and no-motion policies; system accessibility changes apply to running animations.
 - Remove dismissed toasts after actual exit completion across matching viewers, replacing fixed cleanup timing; reindex deletion and drag state by toast identity.

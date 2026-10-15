@@ -1,18 +1,18 @@
 name: zentoast
 description: "A headless, fully customizable toast system for Flutter."
-version: 0.2.2
+version: 1.0.0
 homepage: https://github.com/definev/zentoast
 
 environment:
-  sdk: ^3.7.0
-  flutter: ">=3.24.0"
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
 
 dependencies:
   flutter:
     sdk: flutter
 
   motor: ^1.1.0
-  oref: ^2.8.0
+  oref: ^2.10.0
 
 dev_dependencies:
   flutter_test:
