@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:oref/oref.dart';
 import 'package:zentoast/zentoast.dart';
 
@@ -71,15 +71,20 @@ class SonnerToast extends StatelessWidget {
                 children: [
                   Text(
                     title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Colors.black,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
+                      height: 1.2,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     message,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Colors.black54,
                       fontSize: 12,
@@ -340,19 +345,18 @@ class HomePage extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               spacing: 12,
               mainAxisAlignment: MainAxisAlignment.center,
-              children:
-                  [Text('Sonner'), Text('Brutalist'), Text('Card')]
-                      .map(
-                        (child) => SizedBox(
-                          height: 32,
-                          width: 80,
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: child,
-                          ),
-                        ),
-                      )
-                      .toList(),
+              children: [Text('Sonner'), Text('Brutalist'), Text('Card')]
+                  .map(
+                    (child) => SizedBox(
+                      height: 32,
+                      width: 80,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: child,
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
             Column(
               mainAxisSize: MainAxisSize.min,
@@ -366,14 +370,13 @@ class HomePage extends StatelessWidget {
                       onPressed: () {
                         Toast(
                           category: ToastCategory.success,
-                          builder:
-                              (toast) => SonnerToast(
-                                variant: ToastVariant.success,
-                                title: 'Success',
-                                message: 'Your changes have been saved.',
-                                height: toast.height,
-                                onClose: () => toast.hide(context),
-                              ),
+                          builder: (toast) => SonnerToast(
+                            variant: ToastVariant.success,
+                            title: 'Success',
+                            message: 'Your changes have been saved.',
+                            height: toast.height,
+                            onClose: () => toast.hide(context),
+                          ),
                         ).show(context);
                       },
                       child: const Text('Success'),
@@ -382,14 +385,13 @@ class HomePage extends StatelessWidget {
                       onPressed: () {
                         Toast(
                           category: ToastCategory.general,
-                          builder:
-                              (toast) => SonnerToast(
-                                variant: ToastVariant.info,
-                                title: 'Information',
-                                message: 'Heads up! Something to be aware of.',
-                                height: toast.height,
-                                onClose: () => toast.hide(context),
-                              ),
+                          builder: (toast) => SonnerToast(
+                            variant: ToastVariant.info,
+                            title: 'Information',
+                            message: 'Heads up! Something to be aware of.',
+                            height: toast.height,
+                            onClose: () => toast.hide(context),
+                          ),
                         ).show(context);
                       },
                       child: const Text('Information'),
@@ -398,14 +400,13 @@ class HomePage extends StatelessWidget {
                       onPressed: () {
                         Toast(
                           category: ToastCategory.warning,
-                          builder:
-                              (toast) => SonnerToast(
-                                variant: ToastVariant.warning,
-                                title: 'Warning',
-                                message: 'Please double-check your input.',
-                                height: toast.height,
-                                onClose: () => toast.hide(context),
-                              ),
+                          builder: (toast) => SonnerToast(
+                            variant: ToastVariant.warning,
+                            title: 'Warning',
+                            message: 'Please double-check your input.',
+                            height: toast.height,
+                            onClose: () => toast.hide(context),
+                          ),
                         ).show(context);
                       },
                       child: const Text('Warning'),
@@ -420,14 +421,13 @@ class HomePage extends StatelessWidget {
                       onPressed: () {
                         Toast(
                           category: ToastCategory.success,
-                          builder:
-                              (toast) => BrutalistToast(
-                                variant: ToastVariant.success,
-                                title: 'Success',
-                                message: 'Loud and proud. Changes saved.',
-                                height: toast.height,
-                                onClose: () => toast.hide(context),
-                              ),
+                          builder: (toast) => BrutalistToast(
+                            variant: ToastVariant.success,
+                            title: 'Success',
+                            message: 'Loud and proud. Changes saved.',
+                            height: toast.height,
+                            onClose: () => toast.hide(context),
+                          ),
                         ).show(context);
                       },
                       child: const Text('Success'),
@@ -436,14 +436,13 @@ class HomePage extends StatelessWidget {
                       onPressed: () {
                         Toast(
                           category: ToastCategory.general,
-                          builder:
-                              (toast) => BrutalistToast(
-                                variant: ToastVariant.info,
-                                title: 'Information',
-                                message: 'FYI — keep an eye on this.',
-                                height: toast.height,
-                                onClose: () => toast.hide(context),
-                              ),
+                          builder: (toast) => BrutalistToast(
+                            variant: ToastVariant.info,
+                            title: 'Information',
+                            message: 'FYI — keep an eye on this.',
+                            height: toast.height,
+                            onClose: () => toast.hide(context),
+                          ),
                         ).show(context);
                       },
                       child: const Text('Information'),
@@ -452,14 +451,13 @@ class HomePage extends StatelessWidget {
                       onPressed: () {
                         Toast(
                           category: ToastCategory.warning,
-                          builder:
-                              (toast) => BrutalistToast(
-                                variant: ToastVariant.warning,
-                                title: 'Warning',
-                                message: 'Stop. Recheck your inputs!',
-                                height: toast.height,
-                                onClose: () => toast.hide(context),
-                              ),
+                          builder: (toast) => BrutalistToast(
+                            variant: ToastVariant.warning,
+                            title: 'Warning',
+                            message: 'Stop. Recheck your inputs!',
+                            height: toast.height,
+                            onClose: () => toast.hide(context),
+                          ),
                         ).show(context);
                       },
                       child: const Text('Warning'),
@@ -475,15 +473,13 @@ class HomePage extends StatelessWidget {
                         Toast(
                           height: 300,
                           category: const ToastCategory('card'),
-                          builder:
-                              (toast) => CardToast(
-                                variant: ToastVariant.success,
-                                title: 'Card Success (appears top-left)',
-                                message:
-                                    'This toast has success category, so it appears in the top-left viewer that filters for successes!',
-                                height: toast.height,
-                                onClose: () => toast.hide(context),
-                              ),
+                          builder: (toast) => CardToast(
+                            variant: ToastVariant.success,
+                            title: 'Card Success (appears top-left)',
+                            message: 'This toast has success category, so it appears in the top-left viewer that filters for successes!',
+                            height: toast.height,
+                            onClose: () => toast.hide(context),
+                          ),
                         ).show(context);
                       },
                       child: const Text('Success'),
@@ -493,15 +489,13 @@ class HomePage extends StatelessWidget {
                         Toast(
                           height: 300,
                           category: const ToastCategory('card'),
-                          builder:
-                              (toast) => CardToast(
-                                variant: ToastVariant.info,
-                                title: 'Card Information (appears top-left)',
-                                message:
-                                    'Another information category toast for the top-left viewer.',
-                                height: toast.height,
-                                onClose: () => toast.hide(context),
-                              ),
+                          builder: (toast) => CardToast(
+                            variant: ToastVariant.info,
+                            title: 'Card Information (appears top-left)',
+                            message: 'Another information category toast for the top-left viewer.',
+                            height: toast.height,
+                            onClose: () => toast.hide(context),
+                          ),
                         ).show(context);
                       },
                       child: const Text('Information'),
@@ -511,15 +505,13 @@ class HomePage extends StatelessWidget {
                         Toast(
                           height: 300,
                           category: const ToastCategory('card'),
-                          builder:
-                              (toast) => CardToast(
-                                variant: ToastVariant.warning,
-                                title: 'Card Warning (appears top-left)',
-                                message:
-                                    'Warning toasts only show in top-left corner due to category filtering!',
-                                height: toast.height,
-                                onClose: () => toast.hide(context),
-                              ),
+                          builder: (toast) => CardToast(
+                            variant: ToastVariant.warning,
+                            title: 'Card Warning (appears top-left)',
+                            message: 'Warning toasts only show in top-left corner due to category filtering!',
+                            height: toast.height,
+                            onClose: () => toast.hide(context),
+                          ),
                         ).show(context);
                       },
                       child: const Text('Warning'),
@@ -546,37 +538,36 @@ class MyApp extends StatelessWidget {
       home: const HomePage(),
 
       /// Add this if you want global toast
-      builder:
-          (context, child) => ToastThemeProvider(
-            data: ToastTheme(gap: 10, viewerPadding: EdgeInsets.all(12)),
-            child: Stack(
-              children: [
-                Positioned.fill(child: child ?? SizedBox()),
-                // Main viewer: shows all toasts at top-right
-                SafeArea(
-                  child: ToastViewer(
-                    alignment: watch(context, toastAlignment.call),
-                    delay: Duration(seconds: 2),
-                    categories: [
-                      ToastCategory.general,
-                      ToastCategory.success,
-                      ToastCategory.warning,
-                    ],
-                  ),
-                ),
-                // Card viewer: shows only error toasts at top-left
-                Positioned.fill(
-                  child: const SafeArea(
-                    child: ToastViewer(
-                      alignment: Alignment.topLeft,
-                      delay: Duration(seconds: 5),
-                      categories: [ToastCategory('card')],
-                    ),
-                  ),
-                ),
-              ],
+      builder: (context, child) => ToastThemeProvider(
+        data: ToastTheme(gap: 10, viewerPadding: EdgeInsets.all(12)),
+        child: Stack(
+          children: [
+            Positioned.fill(child: child ?? SizedBox()),
+            // Main viewer: shows all toasts at top-right
+            SafeArea(
+              child: ToastViewer(
+                alignment: watch(context, toastAlignment.call),
+                delay: Duration(seconds: 2),
+                categories: [
+                  ToastCategory.general,
+                  ToastCategory.success,
+                  ToastCategory.warning,
+                ],
+              ),
             ),
-          ),
+            // Card viewer: shows only error toasts at top-left
+            Positioned.fill(
+              child: const SafeArea(
+                child: ToastViewer(
+                  alignment: Alignment.topLeft,
+                  delay: Duration(seconds: 5),
+                  categories: [ToastCategory('card')],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

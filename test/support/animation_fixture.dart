@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter/rendering.dart';
 import 'package:zentoast/zentoast.dart';
 
@@ -23,32 +23,40 @@ class AnimationFixture {
   int paints = 0;
 
   Widget get widget => ToastProvider.create(
-    child: MaterialApp(
-      theme: ThemeData(useMaterial3: true, fontFamily: 'Ahem'),
-      home: Scaffold(
-        body: Builder(
-          builder: (context) {
-            provider = ToastProvider.of(context);
-            return RepaintBoundary(
-              key: boundaryKey,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  const ColoredBox(color: Color(0xFFE9EDF2)),
-                  for (var i = 0; i < viewerCount; i++)
-                    ToastViewer(
-                      alignment: i == 0 ? alignment : Alignment.bottomLeft,
-                      delay: null,
-                      visibleCount: visibleCount,
-                      width: width,
-                      thresholdFullWidth: 600,
-                      categories: [ToastCategory('viewer-$i')],
-                    ),
-                ],
-              ),
-            );
-          },
-        ),
+    child: WidgetsApp(
+      color: const Color(0xFFE9EDF2),
+      // Explicit typography keeps the visual fixture independent of app themes.
+      textStyle: const TextStyle(
+        fontFamily: 'Ahem',
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0.25,
+        color: Color(0xFF1D1B20),
+        textBaseline: TextBaseline.alphabetic,
+        leadingDistribution: TextLeadingDistribution.even,
+      ),
+      builder: (context, child) => Builder(
+        builder: (context) {
+          provider = ToastProvider.of(context);
+          return RepaintBoundary(
+            key: boundaryKey,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                const ColoredBox(color: Color(0xFFE9EDF2)),
+                for (var i = 0; i < viewerCount; i++)
+                  ToastViewer(
+                    alignment: i == 0 ? alignment : Alignment.bottomLeft,
+                    delay: null,
+                    visibleCount: visibleCount,
+                    width: width,
+                    thresholdFullWidth: 600,
+                    categories: [ToastCategory('viewer-$i')],
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     ),
   );
@@ -70,7 +78,7 @@ class AnimationFixture {
                 height: height,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: const Color(0xFFFFFFFF),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFB8C3D0)),
                   boxShadow: const [

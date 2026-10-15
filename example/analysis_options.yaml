@@ -13,6 +13,14 @@ plugins:
 analyzer:
   errors:
     implicit_call_tearoffs: ignore
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 include: package:flutter_lints/flutter.yaml
 
 linter:

@@ -1,7 +1,7 @@
 import 'dart:async' show Timer;
 import 'dart:ui' show lerpDouble;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:motor/motor.dart';
 import 'package:oref/oref.dart';
 
@@ -120,7 +120,7 @@ class Toast {
 /// Theme configuration for toast viewers.
 ///
 /// Controls the spacing and padding of toast stacks. This theme can be
-/// provided via [ToastThemeProvider] or accessed through `Theme.of(context)`.
+/// provided via [ToastThemeProvider] and accessed through [ToastThemeProvider.of].
 ///
 /// Example:
 /// ```dart
@@ -129,7 +129,8 @@ class Toast {
 ///   gap: 12,
 /// )
 /// ```
-class ToastTheme extends ThemeExtension<ToastTheme> {
+@immutable
+class ToastTheme {
   /// Creates a new toast theme.
   ///
   /// [viewerPadding] is the padding around the entire toast stack.
@@ -140,7 +141,7 @@ class ToastTheme extends ThemeExtension<ToastTheme> {
     this.motion = const ToastMotionConfig(),
   });
 
-  /// efault toast theme.
+  /// Default toast theme.
   static const kDefault = ToastTheme(viewerPadding: EdgeInsets.all(12), gap: 8);
 
   /// Padding around the toast viewer container.
@@ -162,8 +163,7 @@ class ToastTheme extends ThemeExtension<ToastTheme> {
   /// Creates a copy of this theme with the given fields replaced.
   ///
   /// If a parameter is null, the corresponding value from this theme is used.
-  @override
-  ThemeExtension<ToastTheme> copyWith({
+  ToastTheme copyWith({
     EdgeInsets? viewerPadding,
     double? gap,
     ToastMotionConfig? motion,
@@ -177,24 +177,22 @@ class ToastTheme extends ThemeExtension<ToastTheme> {
 
   /// Linearly interpolates between two themes.
   ///
-  /// Used by Flutter's theme system to animate between theme changes.
+  /// Spacing is interpolated linearly; motion switches at the midpoint.
   /// [t] is the interpolation factor, typically between 0.0 and 1.0.
-  @override
-  ThemeExtension<ToastTheme> lerp(covariant ToastTheme? other, double t) {
+  ToastTheme lerp(ToastTheme? other, double t) {
+    if (other == null) return this;
     return ToastTheme(
-      viewerPadding:
-          EdgeInsets.lerp(viewerPadding, other?.viewerPadding, t) ??
-          viewerPadding,
-      gap: lerpDouble(gap, other?.gap, t) ?? gap,
-      motion: t < 0.5 ? motion : (other?.motion ?? motion),
+      viewerPadding: EdgeInsets.lerp(viewerPadding, other.viewerPadding, t)!,
+      gap: lerpDouble(gap, other.gap, t)!,
+      motion: t < 0.5 ? motion : other.motion,
     );
   }
 }
 
-/// Provides [ToastTheme] to descendant widgets via the theme system.
+/// Provides [ToastTheme] to descendant widgets.
 ///
 /// Wrap your app or a subtree with this widget to configure toast spacing
-/// and padding. If [data] is null, default values are used.
+/// and padding without requiring a Material app or theme.
 ///
 /// Example:
 /// ```dart
@@ -206,39 +204,31 @@ class ToastTheme extends ThemeExtension<ToastTheme> {
 ///   child: MyApp(),
 /// )
 /// ```
-class ToastThemeProvider extends StatelessWidget {
+class ToastThemeProvider extends InheritedWidget {
   /// Creates a theme provider for toasts.
   ///
-  /// [data] is the theme configuration. If null, defaults to
-  /// `ToastTheme(viewerPadding: EdgeInsets.all(12), gap: 8)`.
+  /// [data] is the theme configuration. Defaults to [ToastTheme.kDefault].
   ///
   /// [child] is the widget subtree that will have access to this theme.
-  const ToastThemeProvider({super.key, this.data, required this.child});
+  const ToastThemeProvider({
+    super.key,
+    this.data = ToastTheme.kDefault,
+    required super.child,
+  });
+
+  /// Returns the nearest toast theme, or [ToastTheme.kDefault] if absent.
+  ///
+  /// The calling widget rebuilds when the provider changes its theme.
+  static ToastTheme of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ToastThemeProvider>()?.data ??
+      ToastTheme.kDefault;
 
   /// The toast theme configuration.
-  ///
-  /// If null, default values are used.
-  final ToastTheme? data;
-
-  /// The widget subtree that will have access to this theme.
-  final Widget child;
+  final ToastTheme data;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final data = this.data ?? ToastTheme.kDefault;
-    return Theme(
-      data: theme.copyWith(
-        extensions: {
-          ...theme.extensions.values.where(
-            (extension) => extension is! ToastTheme,
-          ),
-          data,
-        },
-      ),
-      child: child,
-    );
-  }
+  bool updateShouldNotify(covariant ToastThemeProvider oldWidget) =>
+      data != oldWidget.data;
 }
 
 /// Provides toast management functionality to descendant widgets.
@@ -262,9 +252,9 @@ class ToastProvider extends InheritedWidget {
     required this.data,
     required this.willDeleteToastIndex,
     required this.onDragToastIndex,
-    required _ToastLifecycle lifecycle,
+    required this._lifecycle,
     required super.child,
-  }) : _lifecycle = lifecycle;
+  });
 
   /// Returns the nearest [ToastProvider] ancestor.
   ///
@@ -286,7 +276,7 @@ class ToastProvider extends InheritedWidget {
   /// Example:
   /// ```dart
   /// ToastProvider.create(
-  ///   child: MaterialApp(...),
+  ///   child: MyApp(),
   /// )
   /// ```
   static Widget create({required Widget child}) {
@@ -529,15 +519,13 @@ class ToastViewer extends StatelessWidget {
       });
     });
 
-    final toastTheme =
-        Theme.of(context).extension<ToastTheme>() ?? ToastTheme.kDefault;
+    final toastTheme = ToastThemeProvider.of(context);
     final motionConfig = motion ?? toastTheme.motion;
-    final policy =
-        motionConfig.policy == ToastMotionPolicy.system
-            ? (MediaQuery.maybeOf(context)?.disableAnimations ?? false)
-                ? ToastMotionPolicy.reduced
-                : ToastMotionPolicy.full
-            : motionConfig.policy;
+    final policy = motionConfig.policy == ToastMotionPolicy.system
+        ? (MediaQuery.maybeOf(context)?.disableAnimations ?? false)
+              ? ToastMotionPolicy.reduced
+              : ToastMotionPolicy.full
+        : motionConfig.policy;
     final reduced = policy == ToastMotionPolicy.reduced;
     final immediate = policy == ToastMotionPolicy.none;
     final (isTop, isBottom, isLeft, isRight, isCenterX) = (
@@ -551,10 +539,9 @@ class ToastViewer extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = constraints.biggest;
-        final width =
-            size.width < (thresholdFullWidth ?? 600)
-                ? size.width
-                : (this.width ?? 400);
+        final width = size.width < (thresholdFullWidth ?? 600)
+            ? size.width
+            : (this.width ?? 400);
         final toastWidth = width - toastTheme.viewerPadding.horizontal;
         final stackInnerWidth =
             size.width - toastTheme.viewerPadding.horizontal;
@@ -592,285 +579,275 @@ class ToastViewer extends StatelessWidget {
                         key: ValueKey(allToasts[masterIndex].id),
                         lifecycle: toastProvider._lifecycle,
                         toast: allToasts[masterIndex],
-                        builder:
-                            (context, presentation) => SignalBuilder(
-                              builder: (context) {
-                                final toast = allToasts[masterIndex];
-                                final (positionedIndex, expandedHeight) =
-                                    positions[filteredIndex];
-                                final baseHeight =
-                                    hovered
-                                        ? expandedHeight
-                                        : gap * positionedIndex;
-                                final baseScale =
-                                    hovered
-                                        ? 1.0
-                                        : 1.0 - 0.03 * positionedIndex;
-                                final baseOpacity =
-                                    positionedIndex >= visibleCount ? 0.0 : 1.0;
-                                final isMarkDeleted = willDeleteToastIndex
-                                    .contains(masterIndex);
+                        builder: (context, presentation) => SignalBuilder(
+                          builder: (context) {
+                            final toast = allToasts[masterIndex];
+                            final (positionedIndex, expandedHeight) =
+                                positions[filteredIndex];
+                            final baseHeight = hovered
+                                ? expandedHeight
+                                : gap * positionedIndex;
+                            final baseScale = hovered
+                                ? 1.0
+                                : 1.0 - 0.03 * positionedIndex;
+                            final baseOpacity = positionedIndex >= visibleCount
+                                ? 0.0
+                                : 1.0;
+                            final isMarkDeleted = willDeleteToastIndex.contains(
+                              masterIndex,
+                            );
 
-                                final firstAppear = signal(context, true);
-                                final entering = useMemoized(
-                                  context,
-                                  _ToastEntranceStatus.new,
-                                );
-                                effect(context, () {
-                                  if (!firstAppear()) return;
-                                  final timer = Timer(
-                                    reduced || immediate
-                                        ? Duration.zero
-                                        : Durations.medium2,
-                                    () => firstAppear.set(false),
-                                  );
-                                  onEffectDispose(timer.cancel);
-                                });
+                            final firstAppear = signal(context, true);
+                            final entering = useMemoized(
+                              context,
+                              _ToastEntranceStatus.new,
+                            );
+                            effect(context, () {
+                              if (!firstAppear()) return;
+                              final timer = Timer(
+                                reduced || immediate
+                                    ? Duration.zero
+                                    : const Duration(milliseconds: 300),
+                                () => firstAppear.set(false),
+                              );
+                              onEffectDispose(timer.cancel);
+                            });
 
-                                if ((reduced || immediate) && firstAppear()) {
-                                  WidgetsBinding.instance.addPostFrameCallback((
-                                    _,
-                                  ) {
-                                    if (context.mounted) firstAppear.set(false);
-                                  });
-                                }
+                            if ((reduced || immediate) && firstAppear()) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (context.mounted) firstAppear.set(false);
+                              });
+                            }
 
-                                final manualDragPosition = signal(context, 0.0);
+                            final manualDragPosition = signal(context, 0.0);
 
-                                void endDrag({
-                                  DragEndDetails? details,
-                                  bool reset = false,
-                                }) {
-                                  toastProvider.onDragToastIndex.remove(
-                                    toastProvider.data.indexOf(toast),
-                                  );
-                                  final v = details?.primaryVelocity;
-                                  if (v == null) {
-                                    if (reset) manualDragPosition.set(0.0);
-                                    return;
-                                  }
-                                  if ((alignment.y > 0 && v > 50) ||
-                                      (alignment.y < 0 && v < 50)) {
-                                    toastProvider.hide(toast);
-                                  } else {
-                                    manualDragPosition.set(0.0);
-                                  }
-                                }
+                            void endDrag({
+                              DragEndDetails? details,
+                              bool reset = false,
+                            }) {
+                              toastProvider.onDragToastIndex.remove(
+                                toastProvider.data.indexOf(toast),
+                              );
+                              final v = details?.primaryVelocity;
+                              if (v == null) {
+                                if (reset) manualDragPosition.set(0.0);
+                                return;
+                              }
+                              if ((alignment.y > 0 && v > 50) ||
+                                  (alignment.y < 0 && v < 50)) {
+                                toastProvider.hide(toast);
+                              } else {
+                                manualDragPosition.set(0.0);
+                              }
+                            }
 
-                                final isFirstAppear = firstAppear();
-                                final holding = isFirstAppear && !isMarkDeleted;
-                                final transformY =
-                                    reduced || immediate
-                                        ? baseHeight
-                                        : holding
-                                        ? -34.0
-                                        : isMarkDeleted
-                                        ? -(toast.height + gap * 2) + baseHeight
-                                        : baseHeight;
-                                final scale =
-                                    holding && !reduced && !immediate
-                                        ? 0.97
-                                        : (reduced || immediate
-                                            ? 1.0
-                                            : baseScale);
-                                final opacity =
-                                    isMarkDeleted || (holding && !immediate)
-                                        ? 0.0
-                                        : baseOpacity;
-                                final transition =
-                                    reduced
-                                        ? const ToastMotionTransition(
-                                          position: Motion.linear(
-                                            Duration.zero,
-                                          ),
-                                          scale: Motion.linear(Duration.zero),
-                                          opacity: CurvedMotion(
-                                            Duration(milliseconds: 150),
-                                            Curves.easeOut,
-                                          ),
-                                        )
-                                        : isMarkDeleted
-                                        ? motionConfig.exit
-                                        : entering.active
-                                        ? motionConfig.enter
-                                        : motionConfig.reposition;
-                                // The initial full-motion hold is intentionally inert:
-                                // controllers start at their targets, just as before.
-                                final appearOffsetMotion =
-                                    holding && !reduced && !immediate
-                                        ? const CurvedMotion(
-                                          Durations.medium1,
-                                          Curves.easeOutExpo,
-                                        )
-                                        : transition.position;
-                                final appearScaleMotion =
-                                    holding && !reduced && !immediate
-                                        ? const Motion.snappySpring().segment(
-                                          length: 0.1,
-                                        )
-                                        : transition.scale;
-                                final appearOpacityMotion =
-                                    holding && !reduced && !immediate
-                                        ? const Motion.linear(Durations.medium1)
-                                        : transition.opacity;
-
-                                // Keep content outside the animation callbacks. Its inherited
-                                // and reactive dependencies still rebuild normally.
-                                final content = GestureDetector(
-                                  onTap: () {
-                                    if (!isHovered()) paused.set(!paused());
-                                  },
-                                  onVerticalDragStart: (_) {
-                                    manualDragPosition.set(0.0);
-                                    toastProvider.onDragToastIndex.add(
-                                      toastProvider.data.indexOf(toast),
-                                    );
-                                  },
-                                  onVerticalDragUpdate:
-                                      (details) => manualDragPosition.set(
-                                        manualDragPosition() + details.delta.dy,
-                                      ),
-                                  onVerticalDragCancel:
-                                      () => endDrag(reset: true),
-                                  onVerticalDragEnd:
-                                      (details) => endDrag(details: details),
-                                  child: SizedBox(
-                                    height: toast.height + gap,
-                                    child: ColoredBox(
-                                      color: Colors.transparent,
-                                      child: Align(
-                                        alignment: alignment,
-                                        child: toast.builder(toast),
-                                      ),
+                            final isFirstAppear = firstAppear();
+                            final holding = isFirstAppear && !isMarkDeleted;
+                            final transformY = reduced || immediate
+                                ? baseHeight
+                                : holding
+                                ? -34.0
+                                : isMarkDeleted
+                                ? -(toast.height + gap * 2) + baseHeight
+                                : baseHeight;
+                            final scale = holding && !reduced && !immediate
+                                ? 0.97
+                                : (reduced || immediate ? 1.0 : baseScale);
+                            final opacity =
+                                isMarkDeleted || (holding && !immediate)
+                                ? 0.0
+                                : baseOpacity;
+                            final transition = reduced
+                                ? const ToastMotionTransition(
+                                    position: Motion.linear(Duration.zero),
+                                    scale: Motion.linear(Duration.zero),
+                                    opacity: CurvedMotion(
+                                      Duration(milliseconds: 150),
+                                      Curves.easeOut,
                                     ),
-                                  ),
-                                );
-                                final drag = SignalBuilder(
-                                  builder: (context) {
-                                    final dragPosition = manualDragPosition();
-                                    return _ToastMotionBuilder(
-                                      arguments: [
-                                        MotionArgument.single(
-                                          dragPosition,
-                                          toastProvider.onDragToastIndex
-                                                      .contains(masterIndex) ||
-                                                  reduced ||
-                                                  immediate
-                                              ? MotionPresets.instant
-                                              : motionConfig
-                                                  .dragReturn
-                                                  .position,
-                                        ),
-                                        MotionArgument.single(
-                                          dragPosition * alignment.y.sign > 20
-                                              ? 0.0
-                                              : 1.0,
-                                          reduced
-                                              ? const CurvedMotion(
-                                                Duration(milliseconds: 150),
-                                                Curves.easeOut,
-                                              )
-                                              : motionConfig.dragReturn.opacity,
-                                        ),
-                                      ],
-                                      snap: [reduced || immediate, immediate],
-                                      builder:
-                                          (context, values, child) =>
-                                              Transform.translate(
-                                                offset: Offset(0, values[0]),
-                                                child: Opacity(
-                                                  opacity:
-                                                      values[1]
-                                                          .clamp(0, 1)
-                                                          .toDouble(),
-                                                  child: child,
-                                                ),
-                                              ),
-                                      child: content,
-                                    );
-                                  },
-                                );
-                                final interactiveChild = MouseRegion(
-                                  onEnter: (_) => setHoverDebounced(true),
-                                  onExit: (_) => setHoverDebounced(false),
-                                  child: drag,
-                                );
+                                  )
+                                : isMarkDeleted
+                                ? motionConfig.exit
+                                : entering.active
+                                ? motionConfig.enter
+                                : motionConfig.reposition;
+                            // The initial full-motion hold is intentionally inert:
+                            // controllers start at their targets, just as before.
+                            final appearOffsetMotion =
+                                holding && !reduced && !immediate
+                                ? const CurvedMotion(
+                                    Duration(milliseconds: 250),
+                                    Curves.easeOutExpo,
+                                  )
+                                : transition.position;
+                            final appearScaleMotion =
+                                holding && !reduced && !immediate
+                                ? const Motion.snappySpring().segment(
+                                    length: 0.1,
+                                  )
+                                : transition.scale;
+                            final appearOpacityMotion =
+                                holding && !reduced && !immediate
+                                ? const Motion.linear(
+                                    Duration(milliseconds: 250),
+                                  )
+                                : transition.opacity;
 
-                                // Anchor once. Translation changes paint rather than
-                                // requesting Stack layout on every animation tick.
-                                return Positioned(
-                                  top: isTop ? 0 : null,
-                                  bottom: isBottom ? 0 : null,
-                                  left:
-                                      isCenterX
-                                          ? (stackInnerWidth - toastWidth) / 2
-                                          : (isLeft ? 0 : null),
-                                  right: isRight ? 0 : null,
-                                  width: toastWidth,
-                                  child: _ToastMotionBuilder(
-                                    snap: [
-                                      reduced || immediate,
-                                      reduced || immediate,
-                                      immediate,
-                                    ],
-                                    onUnsettled:
-                                        isMarkDeleted
-                                            ? () => toastProvider._lifecycle
-                                                .resume(toast, presentation)
-                                            : null,
-                                    onSettled:
-                                        isMarkDeleted
-                                            ? () => toastProvider._lifecycle
-                                                .complete(toast, presentation)
-                                            : !holding && entering.active
-                                            ? () => entering.active = false
-                                            : null,
-                                    arguments: [
-                                      MotionArgument.single(
-                                        transformY,
-                                        appearOffsetMotion,
-                                      ),
-                                      MotionArgument.single(
-                                        scale,
-                                        appearScaleMotion,
-                                      ),
-                                      MotionArgument.single(
-                                        opacity,
-                                        appearOpacityMotion,
-                                      ),
-                                    ],
-                                    builder: (context, values, child) {
-                                      final transformY = values[0];
-                                      final scale = values[1];
-                                      final clampedOpacity =
-                                          values[2].clamp(0, 1).toDouble();
-                                      return Transform.translate(
-                                        offset: Offset(
-                                          0,
-                                          isTop
-                                              ? transformY
-                                              : (isBottom ? -transformY : 0),
-                                        ),
-                                        child: IgnorePointer(
-                                          ignoring: clampedOpacity == 0,
-                                          child: RepaintBoundary(
-                                            key: ValueKey(toast.id),
-                                            child: Transform.scale(
-                                              scale: scale,
-                                              child: Opacity(
-                                                opacity: clampedOpacity,
-                                                child: child,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    child: interactiveChild,
-                                  ),
+                            // Keep content outside the animation callbacks. Its inherited
+                            // and reactive dependencies still rebuild normally.
+                            final content = GestureDetector(
+                              onTap: () {
+                                if (!isHovered()) paused.set(!paused());
+                              },
+                              onVerticalDragStart: (_) {
+                                manualDragPosition.set(0.0);
+                                toastProvider.onDragToastIndex.add(
+                                  toastProvider.data.indexOf(toast),
                                 );
                               },
-                            ),
+                              onVerticalDragUpdate: (details) =>
+                                  manualDragPosition.set(
+                                    manualDragPosition() + details.delta.dy,
+                                  ),
+                              onVerticalDragCancel: () => endDrag(reset: true),
+                              onVerticalDragEnd: (details) =>
+                                  endDrag(details: details),
+                              child: SizedBox(
+                                height: toast.height + gap,
+                                child: ColoredBox(
+                                  color: const Color(0x00000000),
+                                  child: Align(
+                                    alignment: alignment,
+                                    child: toast.builder(toast),
+                                  ),
+                                ),
+                              ),
+                            );
+                            final drag = SignalBuilder(
+                              builder: (context) {
+                                final dragPosition = manualDragPosition();
+                                return _ToastMotionBuilder(
+                                  arguments: [
+                                    MotionArgument.single(
+                                      dragPosition,
+                                      toastProvider.onDragToastIndex.contains(
+                                                masterIndex,
+                                              ) ||
+                                              reduced ||
+                                              immediate
+                                          ? MotionPresets.instant
+                                          : motionConfig.dragReturn.position,
+                                    ),
+                                    MotionArgument.single(
+                                      dragPosition * alignment.y.sign > 20
+                                          ? 0.0
+                                          : 1.0,
+                                      reduced
+                                          ? const CurvedMotion(
+                                              Duration(milliseconds: 150),
+                                              Curves.easeOut,
+                                            )
+                                          : motionConfig.dragReturn.opacity,
+                                    ),
+                                  ],
+                                  snap: [reduced || immediate, immediate],
+                                  builder: (context, values, child) =>
+                                      Transform.translate(
+                                        offset: Offset(0, values[0]),
+                                        child: Opacity(
+                                          opacity: values[1]
+                                              .clamp(0, 1)
+                                              .toDouble(),
+                                          child: child,
+                                        ),
+                                      ),
+                                  child: content,
+                                );
+                              },
+                            );
+                            final interactiveChild = MouseRegion(
+                              onEnter: (_) => setHoverDebounced(true),
+                              onExit: (_) => setHoverDebounced(false),
+                              child: drag,
+                            );
+
+                            // Anchor once. Translation changes paint rather than
+                            // requesting Stack layout on every animation tick.
+                            return Positioned(
+                              top: isTop ? 0 : null,
+                              bottom: isBottom ? 0 : null,
+                              left: isCenterX
+                                  ? (stackInnerWidth - toastWidth) / 2
+                                  : (isLeft ? 0 : null),
+                              right: isRight ? 0 : null,
+                              width: toastWidth,
+                              child: _ToastMotionBuilder(
+                                snap: [
+                                  reduced || immediate,
+                                  reduced || immediate,
+                                  immediate,
+                                ],
+                                onUnsettled: isMarkDeleted
+                                    ? () => toastProvider._lifecycle.resume(
+                                        toast,
+                                        presentation,
+                                      )
+                                    : null,
+                                onSettled: isMarkDeleted
+                                    ? () => toastProvider._lifecycle.complete(
+                                        toast,
+                                        presentation,
+                                      )
+                                    : !holding && entering.active
+                                    ? () => entering.active = false
+                                    : null,
+                                arguments: [
+                                  MotionArgument.single(
+                                    transformY,
+                                    appearOffsetMotion,
+                                  ),
+                                  MotionArgument.single(
+                                    scale,
+                                    appearScaleMotion,
+                                  ),
+                                  MotionArgument.single(
+                                    opacity,
+                                    appearOpacityMotion,
+                                  ),
+                                ],
+                                builder: (context, values, child) {
+                                  final transformY = values[0];
+                                  final scale = values[1];
+                                  final clampedOpacity = values[2]
+                                      .clamp(0, 1)
+                                      .toDouble();
+                                  return Transform.translate(
+                                    offset: Offset(
+                                      0,
+                                      isTop
+                                          ? transformY
+                                          : (isBottom ? -transformY : 0),
+                                    ),
+                                    child: IgnorePointer(
+                                      ignoring: clampedOpacity == 0,
+                                      child: RepaintBoundary(
+                                        key: ValueKey(toast.id),
+                                        child: Transform.scale(
+                                          scale: scale,
+                                          child: Opacity(
+                                            opacity: clampedOpacity,
+                                            child: child,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: interactiveChild,
+                              ),
+                            );
+                          },
+                        ),
                       ),
                   ],
                 ),
