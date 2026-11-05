@@ -3,10 +3,8 @@ part of 'toast.dart';
 // Membership changes do not mutate reactive provider state during build. Only
 // a deferred completion removes a toast, using identity instead of list indices.
 class _ToastLifecycle {
-  _ToastLifecycle(this.data, this.deleted, this.dragged);
-  final ReactiveList<Toast> data;
-  final ReactiveSet<int> deleted;
-  final ReactiveSet<int> dragged;
+  _ToastLifecycle(this.store);
+  final _ToastStore store;
   final _presentations = <Toast, Set<Object>>{};
   final _pending = <Toast, Set<Object>>{};
   final _scheduled = <Toast>{};
@@ -31,6 +29,12 @@ class _ToastLifecycle {
     _presentations[toast]?.remove(presentation);
     if (_presentations[toast]?.isEmpty ?? false) _presentations.remove(toast);
     _pending[toast]?.remove(presentation);
+    if (store.isDragging(toast, presentation)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_disposed) store.setDragging(toast, presentation, false);
+      });
+      WidgetsBinding.instance.ensureVisualUpdate();
+    }
     _scheduleRemoval(toast);
   }
 
@@ -52,25 +56,8 @@ class _ToastLifecycle {
       if (_disposed) return;
       if (_pending[toast]?.isNotEmpty ?? true) return;
       _pending.remove(toast);
-      final index = data.indexOf(toast);
-      if (index < 0) return;
-      final deletedToasts = {
-        for (final i in deleted)
-          if (i < data.length) data[i],
-      };
-      final draggedToasts = {
-        for (final i in dragged)
-          if (i < data.length) data[i],
-      };
-      batch(() {
-        data.removeAt(index);
-        deleted.clear();
-        dragged.clear();
-        for (var i = 0; i < data.length; i++) {
-          if (deletedToasts.contains(data[i])) deleted.add(i);
-          if (draggedToasts.contains(data[i])) dragged.add(i);
-        }
-      });
+      _presentations.remove(toast);
+      store.remove(toast);
     });
     WidgetsBinding.instance.ensureVisualUpdate();
   }
@@ -81,26 +68,45 @@ class _ToastPresentation extends StatefulWidget {
     super.key,
     required this.lifecycle,
     required this.toast,
+    required this.hold,
     required this.builder,
   });
   final _ToastLifecycle lifecycle;
   final Toast toast;
-  final Widget Function(BuildContext, Object) builder;
+  final bool hold;
+  final Widget Function(BuildContext, _ToastPresentationState) builder;
 
   @override
   State<_ToastPresentation> createState() => _ToastPresentationState();
 }
 
 class _ToastPresentationState extends State<_ToastPresentation> {
+  bool firstAppear = true;
+  bool entering = true;
+  final dragPosition = ValueNotifier(0.0);
+  Timer? _entrance;
+
+  void _finishHold() {
+    if (mounted && firstAppear) setState(() => firstAppear = false);
+  }
+
   @override
   void initState() {
     super.initState();
     widget.lifecycle.register(widget.toast, this);
+    _entrance = Timer(
+      widget.hold ? const Duration(milliseconds: 300) : Duration.zero,
+      _finishHold,
+    );
   }
 
   @override
   void didUpdateWidget(covariant _ToastPresentation oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!widget.hold && firstAppear) {
+      _entrance?.cancel();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _finishHold());
+    }
     if (oldWidget.lifecycle != widget.lifecycle ||
         oldWidget.toast != widget.toast) {
       oldWidget.lifecycle.unregister(oldWidget.toast, this);
@@ -113,11 +119,9 @@ class _ToastPresentationState extends State<_ToastPresentation> {
 
   @override
   void dispose() {
+    _entrance?.cancel();
+    dragPosition.dispose();
     widget.lifecycle.unregister(widget.toast, this);
     super.dispose();
   }
-}
-
-class _ToastEntranceStatus {
-  bool active = true;
 }

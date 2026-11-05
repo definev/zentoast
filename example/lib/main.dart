@@ -1,8 +1,5 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:oref/oref.dart';
 import 'package:zentoast/zentoast.dart';
-
-final toastAlignment = signal(null, Alignment.bottomRight);
 
 void main() {
   runApp(ToastProvider.create(child: const MyApp()));
@@ -546,7 +543,7 @@ class MyApp extends StatelessWidget {
             // Main viewer: shows all toasts at top-right
             SafeArea(
               child: ToastViewer(
-                alignment: watch(context, toastAlignment.call),
+                alignment: Alignment.bottomRight,
                 delay: Duration(seconds: 2),
                 categories: [
                   ToastCategory.general,

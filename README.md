@@ -14,7 +14,7 @@ You design the UI — **zentoast** takes care of animation, physics, queuing, ge
 - ✨ **Headless Architecture** – Bring your own widgets & design
 - 🎯 **Flexible Positioning** – Display toasts anywhere on screen
 - 🎨 **Extremely Customizable** – Full control over layout, styling & behavior
-- 🏃 **Fluid Animations** – Motor-powered, physics-based animation system
+- 🏃 **Fluid Animations** – Flutter-native, physics-based animation system
 - 👆 **Rich Gestures** – Drag to dismiss, tap to pause, swipe interactions
 - 🔧 **Theming Support** – Global settings via `ToastTheme`
 - 📦 **Multiple Viewers** – Independent stacks with synchronized smoothness
@@ -23,13 +23,15 @@ You design the UI — **zentoast** takes care of animation, physics, queuing, ge
 
 ## Installation
 
-Requires Dart 3.13 or newer (below 4.0) and Flutter 3.47 or newer.
+Requires Dart 3.8 or newer (below 4.0) and Flutter 3.32 or newer.
+The library uses `alien_signals` internally and Flutter animation/physics; it has no Motor or oref dependency.
 
-Add to your `pubspec.yaml`:
+For this development version (not yet published), use a local path or Git dependency.
+Once the version is published, add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  zentoast: ^1.0.0
+  zentoast: ^2.0.0-dev.1
 ```
 
 Import:
@@ -97,14 +99,13 @@ for one `ToastViewer`. Use `copyWith` to override only a phase or property:
 
 ```dart
 import 'package:flutter/widgets.dart';
-import 'package:motor/motor.dart';
 import 'package:zentoast/zentoast.dart';
 
 final motion = const ToastMotionConfig().copyWith(
   exit: const ToastMotionTransition(
-    position: Motion.curved(Duration(milliseconds: 300), Curves.easeOut),
-    scale: Motion.curved(Duration(milliseconds: 300), Curves.easeOut),
-    opacity: Motion.linear(Duration(milliseconds: 200)),
+    position: ToastMotionSpec.curved(Duration(milliseconds: 300), Curves.easeOut),
+    scale: ToastMotionSpec.curved(Duration(milliseconds: 300), Curves.easeOut),
+    opacity: ToastMotionSpec.linear(Duration(milliseconds: 200)),
   ),
 );
 
@@ -132,10 +133,12 @@ but snaps back on return. Policy changes also apply to animations already runnin
 Full-motion defaults retain the 300 ms entrance hold and original snappy springs
 with a 500 ms perceptual duration. Spring settling can take longer. Dismissed toasts
 are removed only after every matching mounted viewer's exit controllers finish;
-a missing or unmounted viewer does not prevent cleanup. Custom motions must reach
-their target and finish: Motor's `Motion.none` holds its starting value, so use
-`ToastMotionPolicy.none` to disable animation. Theme motion configurations switch
-discretely halfway through theme interpolation; spacing still interpolates.
+a missing or unmounted viewer does not prevent cleanup. Springs must settle;
+custom spring constants must be finite and positive.
+Use `ToastMotionPolicy.none` to disable all motion, or
+`ToastMotionSpec.linear(Duration.zero)` to snap one property. Theme motion
+configurations switch discretely halfway through theme interpolation; spacing
+still interpolates.
 
 ### Triggering a Toast
 
@@ -376,10 +379,9 @@ while billing alerts stay anchored at the bottom-left with a custom delay.
 
 ## Theming
 
-Zentoast's own code uses Flutter widgets without importing Material. Motor 1.1.0
-still imports `flutter/material.dart` through its public exports, so removing
-Material from the entire import graph also requires an upstream Motor change
-or replacing that dependency. Wrap your app or a subtree in `ToastThemeProvider`,
+Zentoast uses Flutter widgets and physics without importing Material.
+Its public interface contains no third-party state or motion types.
+Wrap your app or a subtree in `ToastThemeProvider`,
 then read the nearest configuration with
 `ToastThemeProvider.of(context)`. Without a provider, viewers use
 `ToastTheme.kDefault`.
@@ -430,13 +432,17 @@ ToastViewer(
 zentoast includes gesture interaction with no extra setup:
 
 * **Swipe to dismiss** (vertical)
-* **Touch to pause auto-dismiss**
+* **Tap to pause/resume auto-dismiss**
 * **Drag to remove**
-* Smooth physics response powered by *motor*
+* Smooth physics response using Flutter springs
 
 ---
 
 ## Example App
+
+The styled `example/` app uses `material_ui` and requires Flutter 3.47 / Dart 3.13.
+This does not raise the library minimum. With an older SDK, use
+`flutter pub get --no-example` when working on the library.
 
 See `/example` for:
 
@@ -463,6 +469,48 @@ See `/example` for:
 * `Toast.show(context)` – Show a toast
 * `Toast.hide(context)` – Hide the toast
 * `ToastProvider.of(context)` – Access provider manually
+
+---
+
+## Migrating from 1.x
+
+The usual `Toast.show/hide`, `ToastProvider.create/of`, viewer options, categories
+and theme entry points remain available.
+
+- Replace Motor `Motion.linear`, `Motion.curved`, and `Motion.snappySpring` with
+  `ToastMotionSpec.linear`, `ToastMotionSpec.curved`, and
+  `ToastMotionSpec.spring`. The spring defaults remain 500 ms perceptual duration
+  and 0.15 bounce. `ToastMotionSpec.customSpring` accepts Flutter's
+  `SpringDescription` from `package:flutter/physics.dart`.
+- Remove Motor/oref imports if they were only used for zentoast. Third-party
+  signals are private to zentoast; use normal Flutter builders for reactive
+  content supplied by your application.
+- `ToastProvider.data` is now a read-only snapshot, not a reactive collection.
+  Use `show` and `hide` to change the stack. Reading it does not subscribe a
+  Flutter widget to updates.
+- Index-based `willDeleteToastIndex` and `onDragToastIndex` are removed. Use
+  `isDismissing(toast)` for a point-in-time dismissal check; drag state is internal.
+- Showing the same active `Toast` instance again is a no-op. Construct another
+  `Toast` to display another notification.
+- Auto-dismiss still selects the oldest eligible toast in each viewer, pauses
+  on tap/drag, and restarts its full delay on resume or structural stack changes.
+  Hover expands the stack; it does not pause the timer. Updating `delay` or
+  `categories` now reconfigures the timer immediately.
+
+## Validation
+
+```sh
+flutter pub get --no-example
+flutter analyze --no-pub lib test
+flutter test --no-pub --exclude-tags=golden
+```
+
+Golden tests are tagged `golden` because pixels depend on the Flutter engine and
+fonts. Run `flutter test --no-pub` using the baseline SDK described in
+[benchmark/README.md](benchmark/README.md); do not regenerate baselines merely
+because another SDK renders differently. CI checks behavior on Flutter 3.32.0
+and stable. The migration results and timing limitations are recorded in
+[benchmark/NATIVE_MIGRATION.md](benchmark/NATIVE_MIGRATION.md).
 
 ---
 

@@ -1,13 +1,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motor/motor.dart';
 import 'package:zentoast/zentoast.dart';
 
-const _instant = Motion.linear(Duration.zero);
+const _instant = ToastMotionSpec.linear(Duration.zero);
 ToastMotionTransition _transition(int ms) => ToastMotionTransition(
-  position: Motion.linear(Duration(milliseconds: ms)),
-  scale: Motion.linear(Duration(milliseconds: ms)),
-  opacity: Motion.linear(Duration(milliseconds: ms)),
+  position: ToastMotionSpec.linear(Duration(milliseconds: ms)),
+  scale: ToastMotionSpec.linear(Duration(milliseconds: ms)),
+  opacity: ToastMotionSpec.linear(Duration(milliseconds: ms)),
 );
 
 class Harness {
@@ -28,8 +27,9 @@ class Harness {
         builder: (context) {
           provider = ToastProvider.of(context);
           return MediaQuery(
-            data: MediaQuery.of(context)
-                .copyWith(disableAnimations: disableAnimations),
+            data: MediaQuery.of(
+              context,
+            ).copyWith(disableAnimations: disableAnimations),
             child: ToastThemeProvider(
               data: ToastTheme(
                 viewerPadding: const EdgeInsets.all(12),
@@ -140,35 +140,36 @@ void main() {
     },
   );
 
-  testWidgets(
-    'long exits retain identity and reindex deletion and drag atomically',
-    (tester) async {
-      final h = Harness()..motion = ToastMotionConfig(exit: _transition(1000));
-      await tester.pumpWidget(h.widget);
-      final first = h.show('first');
-      final middle = h.show('middle');
-      final last = h.show('last');
-      await enter(tester);
-      h.provider.hide(middle);
-      h.provider.onDragToastIndex.add(2);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-      final added = h.show('added');
-      await tester.pump();
-      expect(h.provider.data, containsAll([first, middle, last, added]));
-      await tester.pumpAndSettle();
-      expect(h.provider.data, [first, last, added]);
-      expect(h.provider.willDeleteToastIndex, isEmpty);
-      expect(h.provider.onDragToastIndex, {1});
-      h.provider.hide(first);
-      h.provider.hide(last);
-      await tester.pump();
-      await tester.pumpAndSettle();
-      expect(h.provider.data, [added]);
-      expect(h.provider.onDragToastIndex, isEmpty);
-      await tester.pumpWidget(const SizedBox());
-    },
-  );
+  testWidgets('long exits retain identity when an earlier toast is removed', (
+    tester,
+  ) async {
+    final h = Harness()..motion = ToastMotionConfig(exit: _transition(1000));
+    await tester.pumpWidget(h.widget);
+    final first = h.show('first');
+    final middle = h.show('middle');
+    final last = h.show('last');
+    await enter(tester);
+    h.provider.hide(middle);
+    tester.widget<GestureDetector>(gestureFor('last')).onVerticalDragStart!(
+      DragStartDetails(),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    final added = h.show('added');
+    await tester.pump();
+    expect(h.provider.data, containsAll([first, middle, last, added]));
+    await tester.pumpAndSettle();
+    expect(h.provider.data, [first, last, added]);
+    expect(h.provider.data.where(h.provider.isDismissing), isEmpty);
+    expect(h.provider.data[1], same(last));
+    h.provider.hide(first);
+    h.provider.hide(last);
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(h.provider.data, [added]);
+
+    await tester.pumpWidget(const SizedBox());
+  });
 
   testWidgets('all viewers complete exit and unmount releases a participant', (
     tester,
@@ -268,7 +269,7 @@ void main() {
         ..motion = ToastMotionConfig(
           reposition: _transition(1000),
           dragReturn: const ToastDragReturnMotion(
-            position: Motion.linear(Duration(milliseconds: 1000)),
+            position: ToastMotionSpec.linear(Duration(milliseconds: 1000)),
             opacity: _instant,
           ),
         );
@@ -308,9 +309,9 @@ void main() {
       ..motion = ToastMotionConfig(exit: _transition(100))
       ..secondMotion = const ToastMotionConfig(
         exit: ToastMotionTransition(
-          position: Motion.linear(Duration(milliseconds: 100)),
-          scale: Motion.linear(Duration(milliseconds: 100)),
-          opacity: Motion.linear(Duration(milliseconds: 1000)),
+          position: ToastMotionSpec.linear(Duration(milliseconds: 100)),
+          scale: ToastMotionSpec.linear(Duration(milliseconds: 100)),
+          opacity: ToastMotionSpec.linear(Duration(milliseconds: 1000)),
         ),
       );
     await tester.pumpWidget(h.widget);
@@ -390,7 +391,7 @@ void main() {
     await gesture.cancel();
     await tester.pump();
     expect(tester.getCenter(find.text('drag')).dy, resting.dy);
-    expect(h.provider.willDeleteToastIndex, isEmpty);
+    expect(h.provider.data.where(h.provider.isDismissing), isEmpty);
     await tester.pumpWidget(const SizedBox());
   });
 

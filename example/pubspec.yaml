@@ -40,7 +40,6 @@ dependencies:
     #   url: https://github.com/definev/zentoast.git
     #   ref: main
     path: ../
-  oref: ^2.5.1
   material_ui: ^1.7.0
 
 dev_dependencies:
