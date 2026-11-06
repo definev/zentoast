@@ -26,8 +26,7 @@ You design the UI — **zentoast** takes care of animation, physics, queuing, ge
 Requires Dart 3.8 or newer (below 4.0) and Flutter 3.32 or newer.
 The library uses `alien_signals` internally and Flutter animation/physics; it has no Motor or oref dependency.
 
-For this development version (not yet published), use a local path or Git dependency.
-Once the version is published, add to your `pubspec.yaml`:
+To try the 2.0 prerelease, add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
