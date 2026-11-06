@@ -1,54 +1,12 @@
 part of 'toast.dart';
 
-final class MotionPresets {
-  static Motion get instant => const Motion.linear(Duration.zero);
-  static Motion get snap => const Motion.snappySpring();
+class _MotionTarget {
+  const _MotionTarget(this.value, this.motion);
+  final double value;
+  final ToastMotionSpec motion;
 }
 
-class MotionArgument<T> {
-  const MotionArgument(
-    this.value,
-    this.converter, [
-    this.motion = const Motion.bouncySpring(),
-  ]);
-
-  const factory MotionArgument.custom(
-    T value,
-    MotionConverter<T> converter, [
-    Motion motion,
-  ]) = MotionArgument;
-
-  static MotionArgument<double> single(
-    double value, [
-    Motion motion = const Motion.bouncySpring(),
-  ]) => MotionArgument<double>(value, MotionConverter.single, motion);
-  static MotionArgument<Offset> offset(
-    Offset value, [
-    Motion motion = const Motion.bouncySpring(),
-  ]) => MotionArgument<Offset>(value, MotionConverter.offset, motion);
-  static MotionArgument<Alignment> alignment(
-    Alignment value, [
-    Motion motion = const Motion.bouncySpring(),
-  ]) => MotionArgument<Alignment>(value, MotionConverter.alignment, motion);
-  static MotionArgument<Color> color(
-    Color value, [
-    Motion motion = const Motion.bouncySpring(),
-  ]) => MotionArgument<Color>(value, MotionConverter.colorRgb, motion);
-  static MotionArgument<Size> size(
-    Size value, [
-    Motion motion = const Motion.bouncySpring(),
-  ]) => MotionArgument<Size>(value, MotionConverter.size, motion);
-  static MotionArgument<Rect> rect(
-    Rect value, [
-    Motion motion = const Motion.bouncySpring(),
-  ]) => MotionArgument<Rect>(value, MotionConverter.rect, motion);
-
-  final T value;
-  final Motion motion;
-  final MotionConverter<T> converter;
-}
-
-// Independent Motor controllers share one build callback. Each property keeps
+// Independent Flutter controllers share one build callback. Each property keeps
 // its own motion and velocity when retargeted; only the widget rebuild is shared.
 class _ToastMotionBuilder extends StatefulWidget {
   const _ToastMotionBuilder({
@@ -60,7 +18,7 @@ class _ToastMotionBuilder extends StatefulWidget {
     this.onUnsettled,
   });
 
-  final List<MotionArgument<double>> arguments;
+  final List<_MotionTarget> arguments;
   final ValueWidgetBuilder<List<double>> builder;
   final Widget child;
   final List<bool>? snap;
@@ -73,7 +31,7 @@ class _ToastMotionBuilder extends StatefulWidget {
 
 class _ToastMotionBuilderState extends State<_ToastMotionBuilder>
     with TickerProviderStateMixin {
-  late final List<MotionController<double>> _controllers;
+  late final List<AnimationController> _controllers;
   late final Listenable _listenable;
   bool _completionScheduled = false;
 
@@ -82,11 +40,10 @@ class _ToastMotionBuilderState extends State<_ToastMotionBuilder>
     super.initState();
     _controllers = [
       for (final argument in widget.arguments)
-        MotionController<double>(
-          motion: argument.motion,
+        AnimationController.unbounded(
           vsync: this,
-          initialValue: argument.value,
-          converter: argument.converter,
+          value: argument.value,
+          animationBehavior: AnimationBehavior.preserve,
         ),
     ];
     _listenable = Listenable.merge(_controllers);
@@ -104,24 +61,36 @@ class _ToastMotionBuilderState extends State<_ToastMotionBuilder>
       final previous = oldWidget.arguments[i];
       final next = widget.arguments[i];
       final controller = _controllers[i];
-      // Match Motor's BaseMotionBuilder update order, including preserving
-      // velocity when the motion or the target changes during an animation.
-      if (previous.converter != next.converter) {
-        controller.converter = next.converter;
+      // Motion changes redirect the old target first. A subsequent target
+      // change starts from that simulation's current value and velocity.
+      if (previous.motion != next.motion && controller.isAnimating) {
+        _animate(controller, previous.value, next.motion);
       }
-      if (previous.motion != next.motion) controller.motion = next.motion;
       if (widget.snap?[i] ?? false) {
         if (controller.isAnimating || controller.value != next.value) {
           controller.value = next.value;
         }
       } else if (previous.value != next.value) {
-        controller.animateTo(next.value);
+        _animate(controller, next.value, next.motion);
       }
     }
     if (_controllers.any((controller) => controller.isAnimating)) {
       widget.onUnsettled?.call();
     }
     _checkSettled();
+  }
+
+  void _animate(
+    AnimationController controller,
+    double target,
+    ToastMotionSpec motion,
+  ) {
+    final simulation = motion._simulation(
+      controller.value,
+      target,
+      controller.velocity,
+    );
+    controller.animateWith(simulation);
   }
 
   void _checkSettled() {

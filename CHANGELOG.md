@@ -1,3 +1,13 @@
+## 2.0.0-dev.1
+- Replace oref with private alien_signals state and explicit Flutter widget lifecycle.
+- Replace Motor with ToastMotionSpec and Flutter-native controllers and springs.
+- Lower the library minimum to Dart 3.8 / Flutter 3.32; the styled example retains its newer Material UI requirement.
+- Track dismissal and drag participation by toast/presentation identity instead of mutable list indices.
+- Make ToastProvider.data a read-only snapshot, remove index sets, and add isDismissing(toast).
+- Treat repeated show of the same active toast as a no-op.
+- Reconfigure auto-dismiss timers when viewer delay/categories change; retain existing tap/drag pause and hover expansion behavior.
+- Preserve default full-motion trajectories, reduced-motion policies and completion-based multi-viewer exit cleanup.
+
 ## 1.0.0
 - First stable release.
 - Remove direct Material imports from the library and tests. `ToastTheme` is now standalone and `ToastThemeProvider` is an inherited widget; use `ToastThemeProvider.of(context)` instead of `ThemeData.extensions`. Motor 1.1.0 still imports Material transitively.

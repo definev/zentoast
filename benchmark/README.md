@@ -62,3 +62,9 @@ stages; lowering UI time does not imply the same increase in displayed FPS.
 Thermal snapshots are retained, as repeated runs on a phone can be affected by
 temperature and scheduling. This is a same-device comparison, not a guarantee
 for every toast implementation or device.
+
+## Dependency migration
+
+See [NATIVE_MIGRATION.md](NATIVE_MIGRATION.md) for the direct-signals/native-motion
+migration, SDK matrix, unchanged golden verification and separate macOS profile
+comparison. Historical Android timings above were not rerun by this migration.

@@ -1,8 +1,5 @@
 include: package:flutter_lints/flutter.yaml
 
-plugins:
-  oref: ^2.8.0
-
 analyzer:
   exclude:
     - build/**

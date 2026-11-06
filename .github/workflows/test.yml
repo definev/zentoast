@@ -1,0 +1,29 @@
+name: Test
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility:
+    name: Flutter ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: minimum
+            version: "3.32.0"
+          - name: stable
+            version: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ matrix.version }}
+          cache: true
+      - run: flutter pub get --no-example
+      - run: flutter analyze --no-pub lib test
+      # Golden pixels belong to their pinned engine/font baseline, not this matrix.
+      - run: flutter test --no-pub --exclude-tags=golden

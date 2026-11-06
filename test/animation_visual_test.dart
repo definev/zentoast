@@ -1,3 +1,6 @@
+@Tags(['golden'])
+library;
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
